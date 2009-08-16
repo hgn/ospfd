@@ -6,6 +6,7 @@ OBJ=buf.o        \
 		timer.o      \
 		event.o      \
 		hello.o      \
+		cli_opt.o  \
 		ospfd.o
 
 TARGET=ospfd

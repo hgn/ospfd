@@ -25,20 +25,6 @@ static void free_ospfd(struct ospfd *o)
 	free(o);
 }
 
-static void set_default_options(struct opts *opts)
-{
-	opts->family        = AF_INET;
-	opts->verbose_level = GENTLE;
-}
-
-int parse_options(struct opts *opts, int ac, char **av)
-{
-	set_default_options(opts);
-
-	opts->me = xstrdup(av[0]);
-
-	return SUCCESS;
-}
 
 static int init_standard_timers(struct ospfd *ospfd)
 {
@@ -61,11 +47,11 @@ int main(int ac, char **av)
 
 	ospfd = alloc_ospfd();
 
-	msg(ospfd, GENTLE, PROGRAMNAME " - " VERSIONSTRING);
-
-	ret = parse_options(&ospfd->opts, ac, av);
+	ret = parse_cli_options(ospfd, ac, av);
 	if (ret != SUCCESS)
 		err_msg_die(EXIT_FAILURE, "Can't parse command line");
+
+	msg(ospfd, GENTLE, PROGRAMNAME " - " VERSIONSTRING);
 
 	/* initialize event subsystem. In this case this belongs
 	 * to open a epoll filedescriptor */

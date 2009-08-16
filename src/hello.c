@@ -20,7 +20,8 @@ void tx_hello_packet(int fd, void *priv_data)
 	int ret;
 	int64_t time_buf;
 	struct ospfd *ospfd = priv_data;
-	fprintf(stderr,"generate HELLO packet\n");
+
+	msg(ospfd, LOUDISH, "generate new HELLO packet");
 
 	/* first of all - disarm the timer_fd and do some
 	 * sanity checks */

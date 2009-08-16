@@ -46,9 +46,13 @@ enum {
 };
 
 struct opts {
+	/* daemon common values */
 	char *me;
-	sa_family_t family;
 	int verbose_level;
+
+	/* ospf related */
+	char *area;
+	sa_family_t family;
 };
 
 struct network {
@@ -68,6 +72,9 @@ struct ospfd {
 	struct network network;
 	struct ev ev;
 };
+
+/* cli_opt.c */
+int parse_cli_options(struct ospfd *, int, char **);
 
 
 #endif /* OSPFD */
