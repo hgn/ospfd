@@ -14,26 +14,38 @@
 #include "timer.h"
 #include "hello.h"
 
+static struct buf *prepare_ipv4_std_header(struct ospfd *ospfd)
+{
+
+}
+
+static int prepare_and_tx_ipv4_hello_msg(struct ospfd *ospfd)
+{
+	int ret = SUCCESS;
+
+	return ret;
+}
+
 /* this function is called in regular intervals by the event loop */
 void tx_ipv4_hello_packet(int fd, void *priv_data)
 {
 	int ret;
-	int64_t time_buf;
 	struct ospfd *ospfd = priv_data;
 
 	msg(ospfd, LOUDISH, "generate new HELLO packet");
 
 	/* first of all - disarm the timer_fd and do some
 	 * sanity checks */
-	ret = read(fd, &time_buf, sizeof(int64_t));
-	if (ret < (int)sizeof(int64_t)) {
-		err_msg("Cannot proper read %d bytes", sizeof(int64_t));
+	ret = timer_del(ospfd, fd);
+	if (ret != SUCCESS) {
+		err_msg("failure in disamring the timer");
+	}
+
+	ret = prepare_and_tx_ipv4_hello_msg(ospfd);
+	if (ret != SUCCESS) {
+		err_msg("failed to create or transmit HELLO packet");
 		return;
 	}
-	if (time_buf > 1)
-		fprintf(stderr, "Timer was not proper handled");
-
-
 
 	/* and rearm the timer */
 	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_ipv4_hello_packet, ospfd);
@@ -41,7 +53,6 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 		err_msg("Can't add timer for HELLO packet generation");
 		return;
 	}
-
 }
 
 

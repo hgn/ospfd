@@ -36,7 +36,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 
-#define	OSPF_DEFAULT_HELLO_INTERVAL 3u
+#define	OSPF_DEFAULT_HELLO_INTERVAL 1u
 
 enum {
 	QUITSCENT = 0,

@@ -67,6 +67,31 @@ int timer_add_s_rel(struct ospfd *ospfd, unsigned int seconds,
 }
 
 
+int timer_del(struct ospfd *ospfd, int fd)
+{
+	ssize_t ret;
+	int64_t time_buf;
+
+	ret = read(fd, &time_buf, sizeof(int64_t));
+	if (ret < (int)sizeof(int64_t)) {
+		err_msg("Cannot proper read %d bytes", sizeof(int64_t));
+		return FAILURE;
+	}
+	if (time_buf > 1)
+		msg(ospfd, GENTLE, "Timer was not proper handled");
+
+	/* ... and close timerfd_create created file descriptor.
+	 * NOTE: this is sufficient for this scenario but it
+	 * may not be sufficient if the underlying file descriptor
+	 * is cloned via dup(2) - so be aware of this circumstance
+	 * and do not dup the timerfd_create created desciptor */
+	ret = close(fd);
+	if (ret < 0) {
+		err_sys_die(EXIT_FAILURE, "failure in closing timerfd_create(2) created socket");
+	}
+
+	return SUCCESS;
+}
 
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */

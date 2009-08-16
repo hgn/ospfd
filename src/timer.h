@@ -6,6 +6,7 @@
 
 int timer_add_ns_rel(struct ospfd *, time_t, long, void (*cb)(int, void *), void *);
 int timer_add_s_rel(struct ospfd *, unsigned int, void (*cb)(int, void *), void *);
+int timer_del(struct ospfd *, int);
 
 
 #endif /* TIMER_H */
