@@ -26,6 +26,8 @@ void packet_input(int fd, void *priv_data)
 	int ret;
 	char *packet[MAX_PACKET_SIZE];
 
+	(void) priv_data;
+
 	ret = read(fd, packet, MAX_PACKET_SIZE);
 	if (ret < 0) {
 		err_msg("failure in read(2) operation for raw socket");
