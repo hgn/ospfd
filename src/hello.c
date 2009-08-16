@@ -15,7 +15,7 @@
 #include "hello.h"
 
 /* this function is called in regular intervals by the event loop */
-void tx_hello_packet(int fd, void *priv_data)
+void tx_ipv4_hello_packet(int fd, void *priv_data)
 {
 	int ret;
 	int64_t time_buf;
@@ -36,7 +36,7 @@ void tx_hello_packet(int fd, void *priv_data)
 
 
 	/* and rearm the timer */
-	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_hello_packet, ospfd);
+	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_ipv4_hello_packet, ospfd);
 	if (ret != SUCCESS) {
 		err_msg("Can't add timer for HELLO packet generation");
 		return;

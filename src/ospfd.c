@@ -30,7 +30,7 @@ static int init_standard_timers(struct ospfd *ospfd)
 {
 	int ret;
 	/* initialize timer for regular HELLO packet transmission */
-	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_hello_packet, ospfd);
+	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_ipv4_hello_packet, ospfd);
 	if (ret != SUCCESS) {
 		err_msg("Can't add timer for HELLO packet generation");
 		return FAILURE;

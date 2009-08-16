@@ -3,7 +3,7 @@
 
 #include "ospfd.h"
 
-void tx_hello_packet(int, void *);
+void tx_ipv4_hello_packet(int, void *);
 
 
 #endif /* TIMER_H */
