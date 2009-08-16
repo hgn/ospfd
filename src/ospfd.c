@@ -13,6 +13,7 @@
 #include "event.h"
 #include "timer.h"
 #include "hello.h"
+#include "rc.h"
 
 
 static struct ospfd *alloc_ospfd(void)
@@ -52,6 +53,10 @@ int main(int ac, char **av)
 		err_msg_die(EXIT_FAILURE, "Can't parse command line");
 
 	msg(ospfd, GENTLE, PROGRAMNAME " - " VERSIONSTRING);
+
+	ret = parse_rc_file(ospfd);
+	if (ret != SUCCESS)
+		err_msg_die(EXIT_FAILURE, "Can't parse configuration file");
 
 	/* initialize event subsystem. In this case this belongs
 	 * to open a epoll filedescriptor */

@@ -28,13 +28,14 @@ int parse_cli_options(struct ospfd *ospfd, int ac, char **av)
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
-			{"area",     1, 0, 'a'},
-			{"verbose",  1, 0, 'v'},
-			{"quite",    1, 0, 'q'},
+			{"area",             1, 0, 'a'},
+			{"verbose",          1, 0, 'v'},
+			{"quite",            1, 0, 'q'},
+			{"configuration",    1, 0, 'f'},
 			{0, 0, 0, 0}
 		};
 
-		c = getopt_long(ac, av, "a:vq",
+		c = getopt_long(ac, av, "a:f:vq",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -48,6 +49,9 @@ int parse_cli_options(struct ospfd *ospfd, int ac, char **av)
 			break;
 		case 'q':
 			opts->verbose_level = QUITSCENT;
+			break;
+		case 'f':
+			opts->rc_path = xstrdup(optarg);
 			break;
 		case '?':
 			break;

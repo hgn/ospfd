@@ -49,6 +49,7 @@ struct opts {
 	/* daemon common values */
 	char *me;
 	int verbose_level;
+	char *rc_path;
 
 	/* ospf related */
 	char *area;
