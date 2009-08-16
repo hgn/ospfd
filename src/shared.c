@@ -9,6 +9,22 @@
 
 #define MAXERRMSG 1024
 
+void
+msg(struct ospfd *ospfd, const int level, const char *format, ...)
+{
+	va_list ap;
+
+	 if (level < ospfd->opts.verbose_level)
+		 return;
+
+	 va_start(ap, format);
+	 vfprintf(stderr, format, ap);
+	 va_end(ap);
+
+	 fputs("\n", stderr);
+}
+
+
 static void
 err_doit(int sys_error, const char *file, const int line_no,
                  const char *fmt, va_list ap)
@@ -24,7 +40,7 @@ err_doit(int sys_error, const char *file, const int line_no,
                 snprintf(buf + len,  sizeof buf - len, " (%s)", strerror(errno_save));
         }
 
-        fprintf(stderr, "ERROR [%s:%d]: %s\n", file, line_no, buf);
+        fprintf(stderr, "ERROR [%9s:%3d]: %s\n", file, line_no, buf);
         fflush(NULL);
 }
 

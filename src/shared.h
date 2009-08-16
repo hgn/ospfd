@@ -5,6 +5,8 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
+#include "ospfd.h"
+
 /* error handling */
 #define err_msg(format, args...) \
         do { \
@@ -37,6 +39,7 @@ void xsetsockopt(int, int, int, const void *, socklen_t, const char *);
 int xsnprintf(char *, size_t , const char *, ...);
 unsigned long long xstrtoull(const char *);
 void *get_in_addr(struct sockaddr *);
+void msg(struct ospfd *, const int , const char *, ...);
 
 #endif /* SHARED_H */
 

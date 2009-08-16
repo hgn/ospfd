@@ -19,6 +19,7 @@ void fini_network(struct ospfd *);
 
 /* ipv4_input.c */
 int ipv4_input(const char *);
+void packet_input(int, void *);
 
 
 #endif /* NETWORK_H */

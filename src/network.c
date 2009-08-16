@@ -11,9 +11,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
 #include "network.h"
 #include "shared.h"
+#include "event.h"
 
 static int join_router_4_multicast(int fd)
 {
@@ -47,7 +47,7 @@ static int init_raw_4_socket(struct ospfd *ospfd)
 
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_OSPF);
 	if (fd < 0) {
-		err_sys("Cannot initialize raw IPPROTO_OSPF socket");
+		err_sys("Failed to create raw IPPROTO_OSPF socket");
 		return FAILURE;
 	}
 
@@ -83,12 +83,20 @@ static void fini_raw_socket(struct ospfd *ospfd)
 int init_network(struct ospfd *ospfd)
 {
 	int ret;
+	uint32_t flags;
 
 	switch (ospfd->opts.family) {
 		case AF_INET:
 			ret = init_raw_4_socket(ospfd);
 			if (ret != SUCCESS) {
 				err_msg("Failed to initialize raw socket");
+				return FAILURE;
+			}
+			/* and register fd */
+			flags = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
+			ret = ev_add(ospfd, ospfd->network.fd, packet_input, NULL, flags);
+			if (ret < 0) {
+				err_msg("cannot at RAW socket to event mechanism");
 				return FAILURE;
 			}
 			break;

@@ -22,6 +22,9 @@
 # define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
 
+#define	PROGRAMNAME   "ospfd"
+#define	VERSIONSTRING "0.0.1"
+
 /* function return codes */
 #define SUCCESS 0
 #define FAILURE -1
@@ -30,22 +33,40 @@
 #define	EXIT_NETWORK 2
 
 
-
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+
+#define	OSPF_DEFAULT_HELLO_INTERVAL 3u
+
+enum {
+	QUITSCENT = 0,
+	GENTLE,
+	LOUDISH,
+	STRESSFUL
+};
 
 struct opts {
 	char *me;
 	sa_family_t family;
+	int verbose_level;
 };
 
 struct network {
 	int fd;
 };
 
+#define	EVENT_BACKING_STORE_HINT 64
+#define	EVENT_ARRAY_SIZE 64
+struct ev {
+	int fd;
+	size_t size;
+};
+
 
 struct ospfd {
 	struct opts opts;
 	struct network network;
+	struct ev ev;
 };
 
 
