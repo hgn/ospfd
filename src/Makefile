@@ -10,6 +10,7 @@ OBJ=buf.o        \
 		parser.tab.o \
 		lex.yy.o     \
 		rc.o         \
+		clist.o      \
 		ospfd.o
 
 TARGET=ospfd

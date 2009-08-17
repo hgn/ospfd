@@ -56,8 +56,26 @@ struct opts {
 	sa_family_t family;
 };
 
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <sys/socket.h>
+#include <netdb.h>
+
+
+struct interface_address {
+	char name[NI_MAXHOST];
+	unsigned int flags;
+	sa_family_t family;
+	struct sockaddr_storage addr;
+	struct sockaddr_storage netmask;
+	struct sockaddr_storage broadaddr;
+};
+
+#include "clist.h"
+
 struct network {
 	int fd;
+	struct list_e *interface_addresses;
 };
 
 #define	EVENT_BACKING_STORE_HINT 64

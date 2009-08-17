@@ -79,6 +79,73 @@ static void fini_raw_socket(struct ospfd *ospfd)
 	close(ospfd->network.fd);
 }
 
+static void print_all_interfaces(const void *data)
+{
+	struct interface_address *ia;
+
+	ia = (struct interface_address *) data;
+
+	fprintf(stderr, "interface: %-10s family %d flags %d\n", ia->name, ia->family, ia->flags);
+
+	return;
+}
+
+static int get_interface_addr(struct ospfd *ospfd)
+{
+	int ret;
+	struct ifaddrs *ifaddr;
+
+	/* First of all: remove all entries if any is available.
+	 * This makes this method re-callable to refresh the interface address
+	 * status */
+
+	ret = getifaddrs(&ifaddr);
+	if (ret < 0) {
+		err_sys("failed to query interface addresses");
+		return FAILURE;
+	}
+
+	while (ifaddr != NULL) {
+
+		struct interface_address *ia;
+
+		if (!ifaddr->ifa_addr)
+			goto next;
+
+		switch (ifaddr->ifa_addr->sa_family) { /* only IPv{4,6} */
+			case AF_PACKET:
+			case AF_INET:
+			case AF_INET6:
+				break;
+			default:
+				goto next;
+				break;
+		}
+
+		ia = xzalloc(sizeof(struct interface_address));
+
+		memcpy(ia->name, ifaddr->ifa_name,
+				min((strlen(ifaddr->ifa_name) + 1), sizeof(ia->name)));
+
+		ia->family = ifaddr->ifa_addr->sa_family;
+		ia->flags  = ifaddr->ifa_flags;
+
+		/* and at the newly data at the end of the list */
+		ospfd->network.interface_addresses =
+			list_insert_before(ospfd->network.interface_addresses, ia);
+
+next:
+		ifaddr = ifaddr->ifa_next;
+
+	}
+
+	freeifaddrs(ifaddr);
+
+	list_for_each(ospfd->network.interface_addresses, print_all_interfaces);
+
+	return SUCCESS;
+}
+
 
 int init_network(struct ospfd *ospfd)
 {
@@ -103,6 +170,12 @@ int init_network(struct ospfd *ospfd)
 		default:
 			err_msg("Protocol family not supported (%d)", ospfd->opts.family);
 			return FAILURE;
+	}
+
+	ret = get_interface_addr(ospfd);
+	if (ret != SUCCESS) {
+		err_msg("failed to determine interface addresses");
+		return FAILURE;
 	}
 
 	return SUCCESS;
