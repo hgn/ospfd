@@ -82,17 +82,20 @@ static void fini_raw_socket(struct ospfd *ospfd)
 static void print_all_addresses(const void *data)
 {
 	const struct ip_addr *ip_addr = (struct ip_addr *) data;
-	char addr[INET6_ADDRSTRLEN];
+	char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN], broadcast[INET_ADDRSTRLEN];
 
 	switch (ip_addr->family) {
 		case AF_INET:
 		case AF_PACKET:
 			inet_ntop(AF_INET, &ip_addr->ipv4.addr, addr, INET6_ADDRSTRLEN);
-			fprintf(stdout, "  inet:  %s\n", addr);
+			inet_ntop(AF_INET, &ip_addr->ipv4.netmask, mask, INET6_ADDRSTRLEN);
+			inet_ntop(AF_INET, &ip_addr->ipv4.broadcast, broadcast, INET6_ADDRSTRLEN);
+			fprintf(stdout, "  inet:  %s netmask: %s broadcast: %s\n", addr, mask, broadcast);
 			break;
 		case AF_INET6:
 			inet_ntop(AF_INET6, &ip_addr->ipv6.addr, addr, INET6_ADDRSTRLEN);
-			fprintf(stdout, "  inet6: %s\n", addr);
+			inet_ntop(AF_INET6, &ip_addr->ipv6.netmask, mask, INET6_ADDRSTRLEN);
+			fprintf(stdout, "  inet6: %s netmask: %s\n", addr, mask);
 			break;
 		default:
 			/* should not happened - catched several times earlier */
@@ -167,7 +170,7 @@ static int get_interface_addr(struct ospfd *ospfd)
 			ospfd->network.rd_list = list_insert_after(ospfd->network.rd_list, rd);
 			memcpy(rd->if_name, ifaddr->ifa_name,
 					min((strlen(ifaddr->ifa_name) + 1), sizeof(rd->if_name)));
-			rd->if_flags  = ifaddr->ifa_flags;
+			rd->if_flags  = ifaddr->ifa_flags; /* see netdevice(7) for list of flags */
 			rd->ip_addr_list = list_create();
 		} else {
 			rd = list->data;
@@ -181,12 +184,23 @@ static int get_interface_addr(struct ospfd *ospfd)
 		ip_addr->family = ifaddr->ifa_addr->sa_family;
 		switch (ip_addr->family) {
 			case AF_INET:
+				/* copy address */
 				in4 = (struct sockaddr_in *)ifaddr->ifa_addr;
 				memcpy(&ip_addr->ipv4.addr, &in4->sin_addr, sizeof(ip_addr->ipv4.addr));
+				/* copy netmask */
+				in4 = (struct sockaddr_in *)ifaddr->ifa_netmask;
+				memcpy(&ip_addr->ipv4.netmask, &in4->sin_addr, sizeof(ip_addr->ipv4.netmask));
+				/* copy broadcast */
+				in4 = (struct sockaddr_in *)ifaddr->ifa_broadaddr;
+				memcpy(&ip_addr->ipv4.broadcast, &in4->sin_addr, sizeof(ip_addr->ipv4.broadcast));
 				break;
 			case AF_INET6:
+				/* copy address */
 				in6 = (struct sockaddr_in6 *)ifaddr->ifa_addr;
 				memcpy(&ip_addr->ipv6.addr, &in6->sin6_addr, sizeof(ip_addr->ipv6.addr));
+				/* copy netmask */
+				in6 = (struct sockaddr_in6 *)ifaddr->ifa_netmask;
+				memcpy(&ip_addr->ipv6.netmask, &in6->sin6_addr, sizeof(ip_addr->ipv6.netmask));
 				break;
 			default:
 				err_msg("Programmed error - address (protocol) not supported: %d",
