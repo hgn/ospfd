@@ -110,7 +110,6 @@ static void print_all_interfaces(const void *data)
 
 	fprintf(stdout, "%-10s <%d>\n", rd->if_name, rd->if_flags);
 
-
 	list_for_each(rd->ip_addr_list, print_all_addresses);
 
 	return;
@@ -198,6 +197,8 @@ static int get_interface_addr(struct ospfd *ospfd)
 				/* copy address */
 				in6 = (struct sockaddr_in6 *)ifaddr->ifa_addr;
 				memcpy(&ip_addr->ipv6.addr, &in6->sin6_addr, sizeof(ip_addr->ipv6.addr));
+				/* and scope too */
+				ip_addr->ipv6.scope = in6->sin6_scope_id;
 				/* copy netmask */
 				in6 = (struct sockaddr_in6 *)ifaddr->ifa_netmask;
 				memcpy(&ip_addr->ipv6.netmask, &in6->sin6_addr, sizeof(ip_addr->ipv6.netmask));
