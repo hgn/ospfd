@@ -90,6 +90,9 @@ int list_delete(struct list_e *n, void (*cb)(void *data))
 	struct list_e *tmp;
 	struct list_e* after = n;
 
+	if (n == NULL)
+		return 0;
+
 	do {
 		tmp = after->next;
 		cb(after->data); /* user supplied free routine */

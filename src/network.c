@@ -123,6 +123,21 @@ static int ifname_cmp(void *d1, void *d2)
 	return !strcmp(rd->if_name, ifname);
 }
 
+static void clear_ip_addr_entries(void *data)
+{
+	free(data);
+}
+
+static void clear_rd_entries(void *data)
+{
+	struct rd *rd = (struct rd *) data;
+
+	/* remove all ip addresses first */
+	list_delete(rd->ip_addr_list, clear_ip_addr_entries);
+
+	free(rd);
+}
+
 static int get_interface_addr(struct ospfd *ospfd)
 {
 	int ret;
@@ -130,7 +145,8 @@ static int get_interface_addr(struct ospfd *ospfd)
 
 	/* First of all: remove all entries if any is available.
 	 * This makes this method re-callable to refresh the interface address
-	 * status */
+	 * status.  */
+	list_delete(ospfd->network.rd_list, clear_rd_entries);
 
 	ret = getifaddrs(&ifaddr);
 	if (ret < 0) {
