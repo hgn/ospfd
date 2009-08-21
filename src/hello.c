@@ -32,7 +32,7 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 	int ret;
 	struct ospfd *ospfd = priv_data;
 
-	msg(ospfd, LOUDISH, "generate new HELLO packet");
+	msg(ospfd, VERBOSE, "generate new HELLO packet");
 
 	/* first of all - disarm the timer_fd and do some
 	 * sanity checks */

@@ -79,15 +79,46 @@ static void fini_raw_socket(struct ospfd *ospfd)
 	close(ospfd->network.fd);
 }
 
+static void print_all_addresses(const void *data)
+{
+	const struct ip_addr *ip_addr = (struct ip_addr *) data;
+	char addr[INET6_ADDRSTRLEN];
+
+	switch (ip_addr->family) {
+		case AF_INET:
+		case AF_PACKET:
+			inet_ntop(AF_INET, &ip_addr->ipv4.addr, addr, INET6_ADDRSTRLEN);
+			fprintf(stdout, "  inet:  %s\n", addr);
+			break;
+		case AF_INET6:
+			inet_ntop(AF_INET6, &ip_addr->ipv6.addr, addr, INET6_ADDRSTRLEN);
+			fprintf(stdout, "  inet6: %s\n", addr);
+			break;
+		default:
+			/* should not happened - catched several times earlier */
+			break;
+	}
+	return;
+}
+
 static void print_all_interfaces(const void *data)
 {
-	struct interface_address *ia;
+	const struct rd *rd = (struct rd *) data;
 
-	ia = (struct interface_address *) data;
+	fprintf(stdout, "%-10s <%d>\n", rd->if_name, rd->if_flags);
 
-	fprintf(stderr, "interface: %-10s family %d flags %d\n", ia->name, ia->family, ia->flags);
+
+	list_for_each(rd->ip_addr_list, print_all_addresses);
 
 	return;
+}
+
+static int ifname_cmp(void *d1, void *d2)
+{
+	struct rd *rd = (struct rd *)d1;
+	char *ifname = (char *)d2;
+
+	return !strcmp(rd->if_name, ifname);
 }
 
 static int get_interface_addr(struct ospfd *ospfd)
@@ -107,13 +138,15 @@ static int get_interface_addr(struct ospfd *ospfd)
 
 	while (ifaddr != NULL) {
 
-		struct interface_address *ia;
+		struct rd *rd;
+		struct ip_addr *ip_addr;
+		struct sockaddr_in *in4;
+		struct sockaddr_in6 *in6;
 
 		if (!ifaddr->ifa_addr)
 			goto next;
 
 		switch (ifaddr->ifa_addr->sa_family) { /* only IPv{4,6} */
-			case AF_PACKET:
 			case AF_INET:
 			case AF_INET6:
 				break;
@@ -122,17 +155,48 @@ static int get_interface_addr(struct ospfd *ospfd)
 				break;
 		}
 
-		ia = xzalloc(sizeof(struct interface_address));
+		/* We know it is a IPv4 or IPv6 address.
+		 * Now we search the routing domain list for
+		 * this interface. If we found is we add the new
+		 * IP address, if not we add a new routing domain
+		 * and also add the IP address */
+		struct list_e *list;
+		list = list_search(ospfd->network.rd_list, ifname_cmp, ifaddr->ifa_name);
+		if (list == NULL) { /* new interface ... */
+			rd = xzalloc(sizeof(struct rd));
+			ospfd->network.rd_list = list_insert_after(ospfd->network.rd_list, rd);
+			memcpy(rd->if_name, ifaddr->ifa_name,
+					min((strlen(ifaddr->ifa_name) + 1), sizeof(rd->if_name)));
+			rd->if_flags  = ifaddr->ifa_flags;
+			rd->ip_addr_list = list_create();
+		} else {
+			rd = list->data;
+		}
 
-		memcpy(ia->name, ifaddr->ifa_name,
-				min((strlen(ifaddr->ifa_name) + 1), sizeof(ia->name)));
+		/* interface specific setup is fine, we can
+		 * now carelessly add the new ip address to
+		 * the interface */
 
-		ia->family = ifaddr->ifa_addr->sa_family;
-		ia->flags  = ifaddr->ifa_flags;
+		ip_addr = xzalloc(sizeof(struct ip_addr));
+		ip_addr->family = ifaddr->ifa_addr->sa_family;
+		switch (ip_addr->family) {
+			case AF_INET:
+				in4 = (struct sockaddr_in *)ifaddr->ifa_addr;
+				memcpy(&ip_addr->ipv4.addr, &in4->sin_addr, sizeof(ip_addr->ipv4.addr));
+				break;
+			case AF_INET6:
+				in6 = (struct sockaddr_in6 *)ifaddr->ifa_addr;
+				memcpy(&ip_addr->ipv6.addr, &in6->sin6_addr, sizeof(ip_addr->ipv6.addr));
+				break;
+			default:
+				err_msg("Programmed error - address (protocol) not supported: %d",
+						ip_addr->family);
+				return FAILURE;
+				break;
+		}
 
 		/* and at the newly data at the end of the list */
-		ospfd->network.interface_addresses =
-			list_insert_before(ospfd->network.interface_addresses, ia);
+		rd->ip_addr_list = list_insert_before(rd->ip_addr_list, ip_addr);
 
 next:
 		ifaddr = ifaddr->ifa_next;
@@ -141,7 +205,7 @@ next:
 
 	freeifaddrs(ifaddr);
 
-	list_for_each(ospfd->network.interface_addresses, print_all_interfaces);
+	list_for_each(ospfd->network.rd_list, print_all_interfaces);
 
 	return SUCCESS;
 }
@@ -191,8 +255,10 @@ void fini_network(struct ospfd *ospfd)
 			err_msg("Protocol family not supported (%d)", ospfd->opts.family);
 			return;
 	}
-}
 
+	/* FIXME: add routine to free interface_address data - to late in the
+	 * morning already -- some hours and my work starts ;-) */
+}
 
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */

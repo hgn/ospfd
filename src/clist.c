@@ -122,7 +122,12 @@ int list_for_each(struct list_e *n, void (*cb)(const void *data))
 struct list_e *list_search(struct list_e *h,
 		int (*cmp)(void *d1, void *d2), void *data)
 {
-	struct list_e* after = h;
+	struct list_e* after;
+
+	if (h == NULL)
+		return NULL;
+
+	after = h;
 
 	do {
 		if (cmp(after->data, data)) {
