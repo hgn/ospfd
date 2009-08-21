@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <netdb.h>
 #include <sys/socket.h>
+#include <net/if.h>
 
 #define min(x,y) ({                     \
         typeof(x) _x = (x);             \
@@ -88,7 +89,7 @@ struct ip_addr {
  * to another area/whatever so all interfaces are available
  * via the struct rd */
 struct rd {
-	char if_name[NI_MAXHOST];
+	char if_name[IF_NAMESIZE];
 	unsigned int if_index;
 	unsigned int if_flags;
 	struct list_e *ip_addr_list;
