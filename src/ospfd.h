@@ -51,7 +51,6 @@ struct opts {
 	char *rc_path;
 
 	/* ospf related */
-	char *area;
 	sa_family_t family;
 };
 
