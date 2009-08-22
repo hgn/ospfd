@@ -75,14 +75,56 @@ int parse_rc_file(struct ospfd *ospfd)
 	return SUCCESS;
 }
 
+static int search_rc_rd_for_interface(void *d1, void *d2)
+{
+	struct rc_rd *rc_rd = (struct rc_rd *) d1;
+	char *if_name = (char *) d2;
+
+	return !strcmp(rc_rd->if_name, if_name);
+}
+
 void rc_set_area(char *interface, char *area)
 {
-	fprintf(stderr, "interface: %s area: %s\n", interface, area);
+	struct rc_rd *rc_rd;
+	struct list_e *list;
+
+	list = list_search(xospfd->rc_rd_list, search_rc_rd_for_interface, interface);
+	if (list == NULL) {
+		rc_rd = xzalloc(sizeof(struct rc_rd));
+		xospfd->rc_rd_list = list_insert_after(xospfd->rc_rd_list, rc_rd);
+		memcpy(rc_rd->if_name, interface,
+				min((strlen(interface) + 1), sizeof(rc_rd->if_name)));
+	} else {
+		rc_rd = list->data;
+	}
+
+	/* and save the value */
+	rc_rd->area_id = atoi(area);
+
+	/* allocated via lexer - can now be freed */
+	free(interface); free(area);
 }
 
 void rc_set_metric(char *interface, char *metric)
 {
-	fprintf(stderr, "interface: %s metric: %s\n", interface, metric);
+	struct rc_rd *rc_rd;
+	struct list_e *list;
+
+	list = list_search(xospfd->rc_rd_list, search_rc_rd_for_interface, interface);
+	if (list == NULL) {
+		rc_rd = xzalloc(sizeof(struct rc_rd));
+		xospfd->rc_rd_list = list_insert_after(xospfd->rc_rd_list, rc_rd);
+		memcpy(rc_rd->if_name, interface,
+				min((strlen(interface) + 1), sizeof(rc_rd->if_name)));
+	} else {
+		rc_rd = list->data;
+	}
+
+	/* and save the value */
+	rc_rd->metric = atoi(metric);
+
+	/* allocated via lexer - can now be freed */
+	free(interface); free(metric);
 }
 
 void rc_set_id(char *id)

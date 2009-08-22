@@ -86,7 +86,9 @@ struct ip_addr {
  * interface activated for routing (e.g. eth0, eth1),
  * but in principle nearly all interface can be *gates*
  * to another area/whatever so all interfaces are available
- * via the struct rd */
+ * via the struct rd. This routing domain reflect the dynamic
+ * view of routing. Configuration parameters is saved within
+ * struct rc_rd */
 struct rd {
 	char if_name[IF_NAMESIZE];
 	unsigned int if_index;
@@ -97,6 +99,12 @@ struct rd {
 struct network {
 	int fd;
 	struct list_e *rd_list;
+};
+
+struct rc_rd {
+	char if_name[IF_NAMESIZE];
+	uint32_t area_id;
+	uint32_t metric;
 };
 
 #define	EVENT_BACKING_STORE_HINT 64
@@ -111,6 +119,7 @@ struct ospfd {
 	struct opts opts;
 	struct network network;
 	struct ev ev;
+	struct list_e *rc_rd_list;
 };
 
 /* cli_opt.c */

@@ -21,7 +21,9 @@ static struct ospfd *alloc_ospfd(void)
 	struct ospfd *o;
 
 	o = xzalloc(sizeof(struct ospfd));
+
 	o->network.rd_list = list_create();
+	o->rc_rd_list      = list_create();
 
 	return o;
 }
