@@ -19,8 +19,10 @@ TARGET=ospfd
 .SUFFIXES: .c .o
 
 CC = gcc
-CFLAGS = -Wall -W -pipe -g -Wwrite-strings -Wsign-compare -Wshadow -Wformat=2
 LIBS = -lm -lrt
+CFLAGS = -Wall -W -pipe -g -Wwrite-strings -Wsign-compare \
+				 -Wshadow -Wformat=2 -Wundef -Wstrict-prototypes \
+				 -fno-strict-aliasing -fno-common -fomit-frame-pointer
 
 all: $(TARGET)
 
