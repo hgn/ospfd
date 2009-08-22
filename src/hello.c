@@ -67,7 +67,7 @@ static void hex_dump_ipv4_packet(struct buf *packet_buffer)
 }
 
 
-static int prepare_ipv4_std_header(struct ospfd *ospfd, struct buf *packet_buffer)
+static int tx_prepare_ipv4_std_header(struct ospfd *ospfd, struct buf *packet_buffer)
 {
 	struct iphdr ip;
 	char data[100] = { 0 };
@@ -120,7 +120,7 @@ static int tx_ipv4_buffer(const struct ospfd *ospfd, struct buf *packet_buffer)
 	return SUCCESS;
 }
 
-static int prepare_and_tx_ipv4_hello_msg(struct ospfd *ospfd)
+static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd)
 {
 	struct buf *packet_buffer;
 
@@ -129,7 +129,7 @@ static int prepare_and_tx_ipv4_hello_msg(struct ospfd *ospfd)
 	 * data and finally pushed on the wire */
 	packet_buffer = buf_alloc_hint(DEFAULT_MTU_SIZE);
 
-	prepare_ipv4_std_header(ospfd, packet_buffer);
+	tx_prepare_ipv4_std_header(ospfd, packet_buffer);
 
 
 	/* and finally send on the wire */
@@ -156,7 +156,7 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 		err_msg("failure in disamring the timer");
 	}
 
-	ret = prepare_and_tx_ipv4_hello_msg(ospfd);
+	ret = tx_prepare_ipv4_hello_msg(ospfd);
 	if (ret != SUCCESS) {
 		err_msg("failed to create or transmit HELLO packet");
 		return;

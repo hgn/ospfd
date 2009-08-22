@@ -1,5 +1,8 @@
-# the working area
-area=0
-
 # the unique id of the router
 id=0
+
+
+interface eth1 set area 0
+
+# set the interface metric for eth1
+interface eth1 set metric 1000

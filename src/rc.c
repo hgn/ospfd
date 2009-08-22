@@ -42,6 +42,9 @@ int open_rc_file(const struct ospfd *ospfd)
 	return FAILURE;
 }
 
+/* see the comments within parse_rc_file() */
+static struct ospfd *xospfd;
+
 int parse_rc_file(struct ospfd *ospfd)
 {
 	int ret;
@@ -52,18 +55,37 @@ int parse_rc_file(struct ospfd *ospfd)
 		return SUCCESS;
 	}
 
+	/* ok, it is a little bit unclean, but anyway:
+	 * It is not possible to pass user defined variables
+	 * to yyparse(). Therefore within the parser process it is
+	 * no possible to get a personal context. This programm,
+	 * on the other hand needs a pointer to struct ospfd to store
+	 * newly determined configuration. The solution is a clumsy hack
+	 * to temporary save a pointer to ospfd -> xospfd even */
+	xospfd = ospfd;
+
 	/* and parse configuration file */
 	yyparse();
+
+	/* we set ospfd to NULL to detect any user that now does
+	 * derefernce xospfd, which can by not valid in any further
+	 * release */
+	xospfd = NULL;
 
 	return SUCCESS;
 }
 
-void rc_add_area(char *area)
+void rc_set_area(char *interface, char *area)
 {
-	fprintf(stderr, "area: %s\n", area);
+	fprintf(stderr, "interface: %s area: %s\n", interface, area);
 }
 
-void rc_add_id(char *id)
+void rc_set_metric(char *interface, char *metric)
+{
+	fprintf(stderr, "interface: %s metric: %s\n", interface, metric);
+}
+
+void rc_set_id(char *id)
 {
 	fprintf(stderr, "id: %s\n", id);
 }

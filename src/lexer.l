@@ -21,6 +21,9 @@ void yyerror(char *s);
 area                             { return AREA; }
 id                               { return ID; }
 prefix                           { return PREFIX; }
+set                              { return SET; }
+interface                        { return INTERFACE; }
+metric                           { return METRIC; }
 [a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word  = strdup(yytext); return WORD; }
 =                                { return EQUAL; }
 \n.*                             { strncpy(lexerrbuff, yytext + 1, MAXLEXERR - 1);
