@@ -73,6 +73,7 @@ int ev_loop(struct ospfd *ospfd)
 		for (i = 0; i < nfds; i++) {
 			struct ev_data *ev_data = (struct ev_data *)events[i].data.ptr;
 			ev_data->cb(ev_data->fd, ev_data->data);
+			free(ev_data);
 		}
 	}
 
