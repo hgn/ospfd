@@ -12,6 +12,7 @@ char lexerrbuff[MAXLEXERR];
 int lineno = 1;
 void yyerror(char *s);
 
+
 %}
 
 %%

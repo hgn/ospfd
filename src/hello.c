@@ -5,6 +5,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <netinet/ip.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "ospfd.h"
 #include "network.h"
@@ -14,16 +17,128 @@
 #include "timer.h"
 #include "hello.h"
 
-static struct buf *prepare_ipv4_std_header(struct ospfd *ospfd)
-{
+#define	DEFAULT_MTU_SIZE 1500
 
+uint16_t calc_csum(unsigned char *buf, ssize_t len)
+{
+	uint32_t sum;
+
+	for (sum = 0; len > 0; len--) {
+		sum += *buf++;
+	}
+
+	sum  = (sum >> 16) + (sum & 0xffff);
+	sum += (sum >> 16);
+
+	return ~sum;
+}
+
+static void ipv4_hdr_set_total_length(struct buf *packet_buffer, uint16_t length)
+{
+	struct iphdr *ip; char *c = buf_addr(packet_buffer);
+
+	ip = (struct iphdr *) c;
+	ip->tot_len = htons(length);
+
+	return;
+}
+
+static void ipv4_set_csum(struct buf *packet_buffer)
+{
+	struct iphdr *ip = buf_addr(packet_buffer);
+
+	ip->check = 0;
+	ip->check = calc_csum((unsigned char *)ip, sizeof(struct iphdr));
+
+	return;
+}
+
+static void hex_dump_ipv4_packet(struct buf *packet_buffer)
+{
+	size_t i;
+	char *c;
+
+	for (i = 0; i < buf_len(packet_buffer); i++) {
+		c = buf_addr(packet_buffer);
+		fprintf(stderr, "%02hhx ", c[i]);
+		if (i != 0 && i % 16 == 0)
+			fprintf(stderr, "\n");
+	}
+}
+
+
+static int prepare_ipv4_std_header(struct ospfd *ospfd, struct buf *packet_buffer)
+{
+	struct iphdr ip;
+	char data[100] = { 0 };
+
+	(void) ospfd;
+
+	memset(&ip, 0, sizeof(struct ip));
+
+	ip.version  = 4;
+	ip.ihl      = sizeof(struct iphdr) >> 2;
+	ip.tos      = 0x0;
+	ip.id       = htons(getpid() & 0xFFFF);
+	ip.frag_off = 0x0;
+	ip.ttl      = 1;
+	ip.protocol = IPPROTO_TCP;
+	ip.check    = 0x0;
+
+	ip.saddr = inet_addr("192.168.1.34");
+	ip.daddr = inet_addr("192.168.1.35");
+
+	buf_add(packet_buffer, (char *) &ip, sizeof(struct ip));
+	buf_add(packet_buffer, data, 100);
+
+	ipv4_hdr_set_total_length(packet_buffer, sizeof(struct iphdr) + 100);
+	ipv4_set_csum(packet_buffer);
+
+	hex_dump_ipv4_packet(packet_buffer);
+
+	return SUCCESS;
+}
+
+static int tx_ipv4_buffer(const struct ospfd *ospfd, struct buf *packet_buffer)
+{
+	ssize_t ret;
+	struct sockaddr_in sin;
+
+	memset(&sin, 0, sizeof(struct sockaddr_in));
+
+	sin.sin_family = AF_INET;
+	sin.sin_port = htons(6666);
+	sin.sin_addr.s_addr = inet_addr("192.168.1.1");
+
+	ret = sendto(ospfd->network.fd, buf_addr(packet_buffer),
+			buf_len(packet_buffer), 0, (struct sockaddr *) &sin, sizeof (sin));
+	if (ret < 0) {
+		err_sys("cannot send HELLO message");
+		return FAILURE;
+	}
+
+	return SUCCESS;
 }
 
 static int prepare_and_tx_ipv4_hello_msg(struct ospfd *ospfd)
 {
-	int ret = SUCCESS;
+	struct buf *packet_buffer;
 
-	return ret;
+	/* allocate a packet buffer - in the next couple
+	 * of steps this buffer is increased and filled with
+	 * data and finally pushed on the wire */
+	packet_buffer = buf_alloc_hint(DEFAULT_MTU_SIZE);
+
+	prepare_ipv4_std_header(ospfd, packet_buffer);
+
+
+	/* and finally send on the wire */
+	tx_ipv4_buffer(ospfd, packet_buffer);
+
+
+	buf_free(packet_buffer);
+
+	return SUCCESS;
 }
 
 /* this function is called in regular intervals by the event loop */
