@@ -83,12 +83,12 @@ static int search_rc_rd_for_interface(void *d1, void *d2)
 	return !strcmp(rc_rd->if_name, if_name);
 }
 
-void rc_set_area(char *interface, char *area)
+static struct rc_rd *get_rc_rd_by_interface(struct ospfd *ospfd, char *interface)
 {
 	struct rc_rd *rc_rd;
 	struct list_e *list;
 
-	list = list_search(xospfd->rc_rd_list, search_rc_rd_for_interface, interface);
+	list = list_search(ospfd->rc_rd_list, search_rc_rd_for_interface, interface);
 	if (list == NULL) {
 		rc_rd = xzalloc(sizeof(struct rc_rd));
 		xospfd->rc_rd_list = list_insert_after(xospfd->rc_rd_list, rc_rd);
@@ -97,6 +97,13 @@ void rc_set_area(char *interface, char *area)
 	} else {
 		rc_rd = list->data;
 	}
+
+	return rc_rd;
+}
+
+void rc_set_area(char *interface, char *area)
+{
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
 
 	/* and save the value */
 	rc_rd->area_id = atoi(area);
@@ -107,30 +114,56 @@ void rc_set_area(char *interface, char *area)
 
 void rc_set_metric(char *interface, char *metric)
 {
-	struct rc_rd *rc_rd;
-	struct list_e *list;
-
-	list = list_search(xospfd->rc_rd_list, search_rc_rd_for_interface, interface);
-	if (list == NULL) {
-		rc_rd = xzalloc(sizeof(struct rc_rd));
-		xospfd->rc_rd_list = list_insert_after(xospfd->rc_rd_list, rc_rd);
-		memcpy(rc_rd->if_name, interface,
-				min((strlen(interface) + 1), sizeof(rc_rd->if_name)));
-	} else {
-		rc_rd = list->data;
-	}
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
 
 	/* and save the value */
 	rc_rd->metric = atoi(metric);
 
-	/* allocated via lexer - can now be freed */
+	/* allocated via lexer - can be freed now */
 	free(interface); free(metric);
 }
+
+void rc_set_ipv4_address(char *interface, char *ip, char *netmask)
+{
+	int ret;
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+
+	rc_rd->ip_addr.family = AF_INET;
+	ret = inet_pton(AF_INET, ip, &rc_rd->ip_addr.ipv4.addr);
+	if (!ret) {
+		err_sys("Cannot convert ip address (%s) into internal in6_addr");
+		rc_rd->ip_addr.family = 0;
+		return;
+	}
+
+	ret = inet_pton(AF_INET, netmask, &rc_rd->ip_addr.ipv4.netmask);
+	if (!ret) {
+		err_sys("Cannot convert ip netmask (%s) into internal in6_addr");
+		rc_rd->ip_addr.family = 0;
+		return;
+	}
+
+	/* allocated via lexer - can be freed now */
+	free(interface); free(ip); free(netmask);
+}
+
+void rc_set_description(char *interface, char *description)
+{
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+
+	memcpy(rc_rd->description, description,
+			min(strlen(description) + 1, sizeof(rc_rd->description)));
+
+	/* allocated via lexer - can be freed now */
+	free(interface); free(description);
+}
+
 
 void rc_show_interface(char *interface)
 {
 	struct rc_rd *rc_rd;
 	struct list_e *list;
+	char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
 
 	list = list_search(xospfd->rc_rd_list, search_rc_rd_for_interface, interface);
 	if (list == NULL) {
@@ -140,15 +173,28 @@ void rc_show_interface(char *interface)
 
 	rc_rd = list->data;
 
-	fprintf(stderr, "Interface: %s Area: %d Metric %d\n",
-			rc_rd->if_name, rc_rd->area_id, rc_rd->metric);
+	switch (rc_rd->ip_addr.family) {
+		case AF_INET:
+			/* no error handling - this data structure is previously
+			 * created via inet_pton() - there should be no problems */
+			inet_ntop(AF_INET, &rc_rd->ip_addr.ipv4.addr, addr, INET6_ADDRSTRLEN);
+			inet_ntop(AF_INET, &rc_rd->ip_addr.ipv4.netmask, mask, INET6_ADDRSTRLEN);
+			break;
+		case AF_INET6:
+		default:
+			err_msg_die(EXIT_FAILURE, "Programmed error - protocol not supported");
+	}
+
+	fprintf(stderr, "Interface: %s Area: %d Metric %d IP: %s Netmask %s\n",
+			rc_rd->if_name, rc_rd->area_id, rc_rd->metric, addr, mask);
 
 	free(interface);
 }
 
 void rc_set_id(char *id)
 {
-	fprintf(stderr, "id: %s\n", id);
+	xospfd->router_id = atoi(id);
+	free(id);
 }
 
 

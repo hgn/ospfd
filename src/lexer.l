@@ -19,13 +19,17 @@ void yyerror(char *s);
 
 #.*                              ;
 area                             { return AREA; }
-id                               { return ID; }
+router-id                        { return ROUTERID; }
 prefix                           { return PREFIX; }
 set                              { return SET; }
 interface                        { return INTERFACE; }
 metric                           { return METRIC; }
 show                             { return SHOW; }
-[a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word  = strdup(yytext); return WORD; }
+ipv4                             { return IPV4; }
+ipv6                             { return IPV6; }
+description                      { return DESCRIPTION; }
+address                          { return ADDRESS; }
+[a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word = strdup(yytext); return WORD; }
 =                                { return EQUAL; }
 \n.*                             { strncpy(lexerrbuff, yytext + 1, MAXLEXERR - 1);
                                    lineno++;

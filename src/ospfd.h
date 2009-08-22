@@ -101,10 +101,14 @@ struct network {
 	struct list_e *rd_list;
 };
 
+#define	MAX_LEN_DESCRIPTION 1024
+
 struct rc_rd {
 	char if_name[IF_NAMESIZE];
+	char description[MAX_LEN_DESCRIPTION];
 	uint32_t area_id;
 	uint32_t metric;
+	struct ip_addr ip_addr;
 };
 
 #define	EVENT_BACKING_STORE_HINT 64
@@ -116,6 +120,7 @@ struct ev {
 
 
 struct ospfd {
+	uint32_t router_id;
 	struct opts opts;
 	struct network network;
 	struct ev ev;

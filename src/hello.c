@@ -81,12 +81,13 @@ static int tx_prepare_ipv4_std_header(struct ospfd *ospfd, struct buf *packet_bu
 	ip.tos      = 0x0;
 	ip.id       = htons(getpid() & 0xFFFF);
 	ip.frag_off = 0x0;
-	ip.ttl      = 1;
+	ip.ttl      = 2;
 	ip.protocol = IPPROTO_TCP;
 	ip.check    = 0x0;
 
+	/* FIXME: take the interface address */
 	ip.saddr = inet_addr("192.168.1.34");
-	ip.daddr = inet_addr("192.168.1.35");
+	ip.daddr = inet_addr(MCAST_ALL_SPF_ROUTERS);
 
 	buf_add(packet_buffer, (char *) &ip, sizeof(struct ip));
 	buf_add(packet_buffer, data, 100);
@@ -106,9 +107,9 @@ static int tx_ipv4_buffer(const struct ospfd *ospfd, struct buf *packet_buffer)
 
 	memset(&sin, 0, sizeof(struct sockaddr_in));
 
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(6666);
-	sin.sin_addr.s_addr = inet_addr("192.168.1.1");
+	sin.sin_family      = AF_INET;
+	sin.sin_port        = 0;
+	sin.sin_addr.s_addr = inet_addr(MCAST_ALL_SPF_ROUTERS);
 
 	ret = sendto(ospfd->network.fd, buf_addr(packet_buffer),
 			buf_len(packet_buffer), 0, (struct sockaddr *) &sin, sizeof (sin));
