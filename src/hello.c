@@ -67,7 +67,8 @@ static void hex_dump_ipv4_packet(struct buf *packet_buffer)
 }
 
 
-static int tx_prepare_ipv4_std_header(struct ospfd *ospfd, struct buf *packet_buffer)
+static int tx_prepare_ipv4_std_header(struct ospfd *ospfd,
+		struct buf *packet_buffer, struct rc_rd *rc_rd)
 {
 	struct iphdr ip;
 	char data[100] = { 0 };
@@ -85,8 +86,8 @@ static int tx_prepare_ipv4_std_header(struct ospfd *ospfd, struct buf *packet_bu
 	ip.protocol = IPPROTO_TCP;
 	ip.check    = 0x0;
 
-	/* FIXME: take the interface address */
-	ip.saddr = inet_addr("192.168.1.34");
+	/* TODO: this is more or less a little but specific ... */
+	ip.saddr = rc_rd->ip_addr.ipv4.addr.s_addr;
 	ip.daddr = inet_addr(MCAST_ALL_SPF_ROUTERS);
 
 	buf_add(packet_buffer, (char *) &ip, sizeof(struct ip));
@@ -121,7 +122,7 @@ static int tx_ipv4_buffer(const struct ospfd *ospfd, struct buf *packet_buffer)
 	return SUCCESS;
 }
 
-static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd)
+static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct rc_rd *rc_rd)
 {
 	struct buf *packet_buffer;
 
@@ -130,7 +131,7 @@ static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd)
 	 * data and finally pushed on the wire */
 	packet_buffer = buf_alloc_hint(DEFAULT_MTU_SIZE);
 
-	tx_prepare_ipv4_std_header(ospfd, packet_buffer);
+	tx_prepare_ipv4_std_header(ospfd, packet_buffer, rc_rd);
 
 
 	/* and finally send on the wire */
@@ -159,7 +160,7 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 		err_msg("failure in disamring the timer");
 	}
 
-	ret = tx_prepare_ipv4_hello_msg(ospfd);
+	ret = tx_prepare_ipv4_hello_msg(ospfd, rc_rd);
 	if (ret != SUCCESS) {
 		err_msg("failed to create or transmit HELLO packet");
 		return;
