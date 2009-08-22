@@ -6,6 +6,7 @@
 int parse_rc_file(struct ospfd *);
 void rc_set_area(char *, char *);
 void rc_set_metric(char *, char *);
+void rc_show_interface(char *);
 void rc_set_id(char *);
 
 #endif /* RC_H */

@@ -24,6 +24,7 @@ prefix                           { return PREFIX; }
 set                              { return SET; }
 interface                        { return INTERFACE; }
 metric                           { return METRIC; }
+show                             { return SHOW; }
 [a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word  = strdup(yytext); return WORD; }
 =                                { return EQUAL; }
 \n.*                             { strncpy(lexerrbuff, yytext + 1, MAXLEXERR - 1);
@@ -39,7 +40,6 @@ metric                           { return METRIC; }
 void
 yyerror(char *str)
 {
-	fprintf(stderr, "Failed to parse configuration file (line %d):%s (%s)",
+	fprintf(stderr, "Failed to parse configuration file (line %d):%s (%s)\n",
                           lineno, str, lexerrbuff);
-	exit(333);
 }

@@ -127,6 +127,25 @@ void rc_set_metric(char *interface, char *metric)
 	free(interface); free(metric);
 }
 
+void rc_show_interface(char *interface)
+{
+	struct rc_rd *rc_rd;
+	struct list_e *list;
+
+	list = list_search(xospfd->rc_rd_list, search_rc_rd_for_interface, interface);
+	if (list == NULL) {
+		fprintf(stderr, "Interface %s not konfigured!\n", interface);
+		return;
+	}
+
+	rc_rd = list->data;
+
+	fprintf(stderr, "Interface: %s Area: %d Metric %d\n",
+			rc_rd->if_name, rc_rd->area_id, rc_rd->metric);
+
+	free(interface);
+}
+
 void rc_set_id(char *id)
 {
 	fprintf(stderr, "id: %s\n", id);

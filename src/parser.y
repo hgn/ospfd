@@ -21,7 +21,7 @@ int yylex(void);
 }
 
 
-%token EQUAL AREA ID PREFIX INTERFACE SET METRIC
+%token EQUAL AREA ID PREFIX INTERFACE SET METRIC SHOW
 
 %token <word>  WORD
 
@@ -34,6 +34,7 @@ commands:
 
 command: INTERFACE WORD SET AREA WORD    { rc_set_area($2, $5); }
 		|    INTERFACE WORD SET METRIC WORD  { rc_set_metric($2, $5); }
+		|    INTERFACE WORD SHOW             { rc_show_interface($2); }
     |    ID EQUAL WORD                   { rc_set_id($3);   }
     |    PREFIX EQUAL WORD               { rc_set_id($3); }
     ;
