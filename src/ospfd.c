@@ -34,15 +34,31 @@ static void free_ospfd(struct ospfd *o)
 }
 
 
-static int init_standard_timers(struct ospfd *ospfd)
+static void init_standard_timers(void *d1, void *d2)
 {
 	int ret;
+	struct rc_rd *rc_rd = (struct rc_rd *) d1;
+	struct ospfd *ospfd = (struct ospfd *) d2;
+	struct tx_hello_arg *txha;
+
+	txha = xzalloc(sizeof(struct tx_hello_arg));
+	txha->ospfd = ospfd;
+	txha->rc_rd = rc_rd;
+
 	/* initialize timer for regular HELLO packet transmission */
-	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_ipv4_hello_packet, ospfd);
+	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_ipv4_hello_packet, txha);
 	if (ret != SUCCESS) {
 		err_msg("Can't add timer for HELLO packet generation");
-		return FAILURE;
+		return;
 	}
+
+	return;
+}
+
+static int initiate_exchange(struct ospfd *ospfd)
+{
+	/* for each configure interface one timer */
+	list_for_each_with_arg(ospfd->rc_rd_list, init_standard_timers, ospfd);
 
 	return SUCCESS;
 }
@@ -76,7 +92,8 @@ int main(int ac, char **av)
 	if (ret != SUCCESS)
 		err_msg_die(EXIT_FAILURE, "Can't initialize network subsystem");
 
-	ret = init_standard_timers(ospfd);
+	/* initialize for every configure interface a HELLO interval */
+	ret = initiate_exchange(ospfd);
 	if (ret != SUCCESS)
 		err_msg_die(EXIT_FAILURE, "Failed to setup standard timers - exiting now");
 

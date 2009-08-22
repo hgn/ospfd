@@ -146,7 +146,9 @@ static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd)
 void tx_ipv4_hello_packet(int fd, void *priv_data)
 {
 	int ret;
-	struct ospfd *ospfd = priv_data;
+	struct tx_hello_arg *txha = priv_data;
+	struct ospfd *ospfd = txha->ospfd;
+	struct rc_rd *rc_rd = txha->rc_rd;
 
 	msg(ospfd, VERBOSE, "generate new HELLO packet");
 
@@ -164,7 +166,8 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 	}
 
 	/* and rearm the timer */
-	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_ipv4_hello_packet, ospfd);
+	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL,
+			tx_ipv4_hello_packet, priv_data);
 	if (ret != SUCCESS) {
 		err_msg("Can't add timer for HELLO packet generation");
 		return;

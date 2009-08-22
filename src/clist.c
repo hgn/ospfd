@@ -121,6 +121,24 @@ int list_for_each(struct list_e *n, void (*cb)(const void *data))
 	return 0;
 }
 
+int list_for_each_with_arg(struct list_e *n, void (*cb)(void *d1, void *d2), void *data2)
+{
+	void *taddr = n;
+	struct list_e *tmp;
+	struct list_e *after = n;
+
+	while (after) {
+		tmp = after->next;
+		cb(after->data, data2); /* call callback handler */
+		free(after);
+		after = tmp;
+		if (after == taddr)
+			break;
+	}
+
+	return 0;
+}
+
 
 struct list_e *list_search(struct list_e *h,
 		int (*cmp)(void *d1, void *d2), void *data)
