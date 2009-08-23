@@ -43,7 +43,7 @@ static void ipv4_hdr_set_total_length(struct buf *packet_buffer, uint16_t length
 	return;
 }
 
-static void ipv4_set_csum(struct buf *packet_buffer)
+static void ipv4_recalc_hdr_csum(struct buf *packet_buffer)
 {
 	struct iphdr *ip = buf_addr(packet_buffer);
 
@@ -62,8 +62,9 @@ static void hex_dump_ipv4_packet(struct buf *packet_buffer)
 		c = buf_addr(packet_buffer);
 		fprintf(stderr, "%02hhx ", c[i]);
 		if (i != 0 && i % 16 == 0)
-			fprintf(stderr, "\n");
+			fputs("\n", stderr);
 	}
+	fputs("\n", stderr);
 }
 
 
@@ -71,7 +72,6 @@ static int tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 		struct buf *packet_buffer, struct rc_rd *rc_rd)
 {
 	struct iphdr ip;
-	char data[100] = { 0 };
 
 	(void) ospfd;
 
@@ -83,7 +83,7 @@ static int tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 	ip.id       = htons(getpid() & 0xFFFF);
 	ip.frag_off = 0x0;
 	ip.ttl      = 2;
-	ip.protocol = IPPROTO_TCP;
+	ip.protocol = IPPROTO_OSPF;
 	ip.check    = 0x0;
 
 	/* TODO: this is more or less a little but specific ... */
@@ -91,12 +91,29 @@ static int tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 	ip.daddr = inet_addr(MCAST_ALL_SPF_ROUTERS);
 
 	buf_add(packet_buffer, (char *) &ip, sizeof(struct ip));
-	buf_add(packet_buffer, data, 100);
 
-	ipv4_hdr_set_total_length(packet_buffer, sizeof(struct iphdr) + 100);
-	ipv4_set_csum(packet_buffer);
+	return SUCCESS;
+}
 
-	hex_dump_ipv4_packet(packet_buffer);
+static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
+		struct buf *packet_buffer, struct rc_rd *rc_rd)
+{
+	struct hello_ipv4_std_header hello_hdr;
+
+	(void) ospfd;
+
+	memset(&hello_hdr, 0, sizeof(struct hello_ipv4_std_header));
+
+	hello_hdr.version   = OSPF2_VERSION;
+	hello_hdr.type      = MESSAGE_TYPE_HELLO;
+	hello_hdr.length    = 0; /* is adjusted later on */
+	/* The router id can the IPv4 address as well! - More compatibel then? */
+	hello_hdr.router_id = htonl(ospfd->router_id);
+	hello_hdr.area_id   = htonl(rc_rd->area_id);
+	hello_hdr.checksum  = 0; /* also adjusted later */
+	hello_hdr.auth_type = AUTH_TYPE_NULL;
+
+	buf_add(packet_buffer, (char *) &hello_hdr, sizeof(struct hello_ipv4_std_header));
 
 	return SUCCESS;
 }
@@ -133,9 +150,20 @@ static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct rc_rd *rc_rd)
 
 	tx_prepare_ipv4_std_header(ospfd, packet_buffer, rc_rd);
 
+	tx_prepare_ospf_std_header(ospfd, packet_buffer, rc_rd);
+
+	/* and set length of packet within the IPv4 header and recalculate
+	 * the IPv4 header checksum */
+	ipv4_hdr_set_total_length(packet_buffer, buf_len(packet_buffer));
+	ipv4_recalc_hdr_csum(packet_buffer);
+
 
 	/* and finally send on the wire */
 	tx_ipv4_buffer(ospfd, packet_buffer);
+
+	msg(ospfd, VERBOSE, "transmitted new HELLO packet (size: %d byte)",
+			buf_len(packet_buffer));
+	//hex_dump_ipv4_packet(packet_buffer);
 
 
 	buf_free(packet_buffer);
@@ -157,7 +185,7 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 	 * sanity checks */
 	ret = timer_del(ospfd, fd);
 	if (ret != SUCCESS) {
-		err_msg("failure in disamring the timer");
+		err_msg("failure in disarming the timer");
 	}
 
 	ret = tx_prepare_ipv4_hello_msg(ospfd, rc_rd);

@@ -28,16 +28,15 @@ void packet_input(int fd, void *priv_data)
 
 	(void) priv_data;
 
-	ret = read(fd, packet, MAX_PACKET_SIZE);
-	if (ret < 0) {
-		err_msg("failure in read(2) operation for raw socket");
+	while ((ret = read(fd, packet, MAX_PACKET_SIZE)) > 0) {
+		/* try to guess if packet is ipv4 or ipv6 and has a valid
+		 * OSPF header */
+		fprintf(stderr, "new incoming packet of size %d\n", ret);
+	}
+	if (ret < 0 && errno != EWOULDBLOCK) {
+		err_sys("failure in read(2) operation for raw socket");
 		return;
 	}
-
-	/* try to guess if packet is ipv4 or ipv6 and has a valid
-	 * OSPF header */
-	fprintf(stderr, "new incoming packet\n");
-
 }
 
 

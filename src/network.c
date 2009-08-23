@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -43,7 +44,7 @@ static int join_router_4_multicast(int fd)
 
 static int init_raw_4_socket(struct ospfd *ospfd)
 {
-	int fd, on = 1, ret;
+	int fd, on = 1, ret, flags;
 
 	fd = socket(AF_INET, SOCK_RAW, IPPROTO_OSPF);
 	if (fd < 0) {
@@ -68,6 +69,12 @@ static int init_raw_4_socket(struct ospfd *ospfd)
 		err_msg("cannot join multicast groups");
 		return FAILURE;
 	}
+
+	/* make socket non-blocking */
+	if ((flags = fcntl(fd, F_GETFL, 0)) == -1)
+		flags = 0;
+	fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
 
 	ospfd->network.fd = fd;
 

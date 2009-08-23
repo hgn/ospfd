@@ -74,7 +74,8 @@ int timer_del(struct ospfd *ospfd, int fd)
 
 	ret = read(fd, &time_buf, sizeof(int64_t));
 	if (ret < (int)sizeof(int64_t)) {
-		err_msg("Cannot proper read %d bytes", sizeof(int64_t));
+		err_msg("Cannot proper read %d bytes - got %d",
+				sizeof(int64_t), ret);
 		return FAILURE;
 	}
 	if (time_buf > 1)
