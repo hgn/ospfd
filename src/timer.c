@@ -50,7 +50,7 @@ int timer_add_ns_rel(struct ospfd *ospfd, time_t sec, long nsec,
 	/* and add to event mechanism to monitor for it */
 	flags = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
 
-	ret = ev_add(ospfd, fd, cb, data, flags);
+	ret = ev_add(ospfd, fd, cb, data, flags, EVENT_ONE_SHOT);
 	if (ret < 0) {
 		err_msg("failed to add timer fd to event based monitoring system");
 		return FAILURE;
@@ -81,11 +81,14 @@ int timer_del(struct ospfd *ospfd, int fd)
 	if (time_buf > 1)
 		msg(ospfd, GENTLE, "Timer was not proper handled");
 
-	/* ... and close timerfd_create created file descriptor.
-	 * NOTE: this is sufficient for this scenario but it
-	 * may not be sufficient if the underlying file descriptor
-	 * is cloned via dup(2) - so be aware of this circumstance
-	 * and do not dup the timerfd_create created desciptor */
+	/* and remove from event array */
+	ret = ev_del(ospfd, fd);
+	if (ret < 0) {
+		err_msg("timer can't remove timer descriptor from event mechanism");
+		return FAILURE;
+	}
+
+	/* ... and close via timerfd_create() created file descriptor */
 	ret = close(fd);
 	if (ret < 0) {
 		err_sys_die(EXIT_FAILURE, "failure in closing timerfd_create(2) created socket");

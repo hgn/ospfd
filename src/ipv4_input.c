@@ -26,7 +26,7 @@ void packet_input(int fd, void *priv_data)
 	int ret;
 	char *packet[MAX_PACKET_SIZE];
 
-	(void) priv_data;
+	(void) priv_data; /* priv priv_data is a NULL pointer here */
 
 	while ((ret = read(fd, packet, MAX_PACKET_SIZE)) > 0) {
 		/* try to guess if packet is ipv4 or ipv6 and has a valid
