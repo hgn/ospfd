@@ -35,7 +35,9 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-#define	OSPF_DEFAULT_HELLO_INTERVAL 1u
+#define	OSPF_DEFAULT_HELLO_INTERVAL 15u
+#define	OSPF_DEFAULT_ROUTER_PRIORITY 1u
+#define	OSPF_DEFAULT_ROUTER_DEAD_INTERVAL 40u
 
 enum {
 	QUITSCENT = 0,

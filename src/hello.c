@@ -115,6 +115,28 @@ static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
 	return SUCCESS;
 }
 
+#define	OSPF_HELLO_OPTION_DN (1 << 7)
+#define	OSPF_HELLO_OPTION_O  (1 << 6)
+#define	OSPF_HELLO_OPTION_DC (1 << 5)
+#define	OSPF_HELLO_OPTION_L  (1 << 4)
+#define	OSPF_HELLO_OPTION_NP (1 << 3)
+#define	OSPF_HELLO_OPTION_MC (1 << 2)
+#define	OSPF_HELLO_OPTION_E  (1 << 1)
+
+
+static uint8_t get_hello_options(struct ospfd *ospfd, struct rc_rd *rc_rd)
+{
+	uint8_t options;
+
+	(void) ospfd; (void) rc_rd;
+
+	/* FIXME: make this configurable */
+	options |= OSPF_HELLO_OPTION_L;
+	options |= OSPF_HELLO_OPTION_E;
+
+	return options;
+}
+
 static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 		struct buf *packet_buffer, struct rc_rd *rc_rd)
 {
@@ -125,9 +147,18 @@ static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 	memset(&hello_hdr, 0, sizeof(struct hello_ipv4_std_header));
 
 	hello_hdr.network_mask.s_addr = rc_rd->ip_addr.ipv4.netmask.s_addr;
+
+	/* set HELLO interval */
 	hello_hdr.hello_interval      = rc_rd->hello_interval ? htons(rc_rd->hello_interval) :
 		htons(OSPF_DEFAULT_HELLO_INTERVAL);
 
+	hello_hdr.options = htons(get_hello_options(ospfd, rc_rd));
+
+	/* TODO: make then configurable */
+	hello_hdr.priority = htons(OSPF_DEFAULT_ROUTER_PRIORITY);
+
+	/* TODO: make then configurable */
+	hello_hdr.dead_interval = htonl(OSPF_DEFAULT_ROUTER_DEAD_INTERVAL);
 
 	buf_add(packet_buffer, (char *) &hello_hdr, sizeof(struct hello_ipv4_std_header));
 

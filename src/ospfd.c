@@ -36,7 +36,7 @@ static void free_ospfd(struct ospfd *o)
 
 static void init_standard_timers(void *d1, void *d2)
 {
-	int ret;
+	int ret, first_hello_start;
 	struct rc_rd *rc_rd = (struct rc_rd *) d1;
 	struct ospfd *ospfd = (struct ospfd *) d2;
 	struct tx_hello_arg *txha;
@@ -45,8 +45,13 @@ static void init_standard_timers(void *d1, void *d2)
 	txha->ospfd = ospfd;
 	txha->rc_rd = rc_rd;
 
+	/* we start with our HELLO emission after 1 second
+	 * after daemon start - should we jitter here or increase/decrease
+	 * this value? Hopefully not! ;-) */
+	first_hello_start = 1;
+
 	/* initialize timer for regular HELLO packet transmission */
-	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL, tx_ipv4_hello_packet, txha);
+	ret = timer_add_s_rel(ospfd, first_hello_start, tx_ipv4_hello_packet, txha);
 	if (ret != SUCCESS) {
 		err_msg("Can't add timer for HELLO packet generation");
 		return;
