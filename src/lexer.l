@@ -29,6 +29,7 @@ ipv4                             { return IPV4; }
 ipv6                             { return IPV6; }
 description                      { return DESCRIPTION; }
 address                          { return ADDRESS; }
+hello-interval                   { return HELLOINTERVAL; }
 [a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word = strdup(yytext); return WORD; }
 =                                { return EQUAL; }
 \n.*                             { strncpy(lexerrbuff, yytext + 1, MAXLEXERR - 1);

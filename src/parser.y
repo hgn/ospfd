@@ -20,7 +20,7 @@ int yylex(void);
 }
 
 %token EQUAL AREA ROUTERID PREFIX INTERFACE SET METRIC SHOW
-%token IPV4 IPV6 ADDRESS DESCRIPTION
+%token IPV4 IPV6 ADDRESS DESCRIPTION HELLOINTERVAL
 
 %token <word>  WORD
 
@@ -36,7 +36,8 @@ command: INTERFACE WORD SET AREA WORD    { rc_set_area($2, $5); }
 		|    INTERFACE WORD SET IPV4 ADDRESS WORD WORD  { rc_set_ipv4_address($2, $6, $7); }
 		|    INTERFACE WORD SHOW             { rc_show_interface($2); }
 		|    INTERFACE WORD DESCRIPTION WORD { rc_set_description($2, $4); }
-        |    ROUTERID EQUAL WORD                   { rc_set_id($3);   }
+    |    ROUTERID EQUAL WORD             { rc_set_id($3);   }
+    |    INTERFACE WORD SET HELLOINTERVAL WORD  { rc_set_hello_interval($2, $5);   }
     |    PREFIX EQUAL WORD               { rc_set_id($3); }
     ;
 

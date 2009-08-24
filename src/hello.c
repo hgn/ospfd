@@ -95,25 +95,45 @@ static int tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
 		struct buf *packet_buffer, struct rc_rd *rc_rd)
 {
-	struct hello_ipv4_std_header hello_hdr;
+	struct hello_ipv4_std_header std_hdr;
+
+	(void) ospfd;
+
+	memset(&std_hdr, 0, sizeof(struct hello_ipv4_std_header));
+
+	std_hdr.version   = OSPF2_VERSION;
+	std_hdr.type      = MESSAGE_TYPE_HELLO;
+	std_hdr.length    = 0; /* is adjusted later on */
+	/* The router id can the IPv4 address as well! - More compatibel then? */
+	std_hdr.router_id = htonl(ospfd->router_id);
+	std_hdr.area_id   = htonl(rc_rd->area_id);
+	std_hdr.checksum  = 0; /* also adjusted later */
+	std_hdr.auth_type = AUTH_TYPE_NULL;
+
+	buf_add(packet_buffer, (char *) &std_hdr, sizeof(struct hello_ipv4_std_header));
+
+	return SUCCESS;
+}
+
+static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
+		struct buf *packet_buffer, struct rc_rd *rc_rd)
+{
+	struct ipv4_hello_header hello_hdr;
 
 	(void) ospfd;
 
 	memset(&hello_hdr, 0, sizeof(struct hello_ipv4_std_header));
 
-	hello_hdr.version   = OSPF2_VERSION;
-	hello_hdr.type      = MESSAGE_TYPE_HELLO;
-	hello_hdr.length    = 0; /* is adjusted later on */
-	/* The router id can the IPv4 address as well! - More compatibel then? */
-	hello_hdr.router_id = htonl(ospfd->router_id);
-	hello_hdr.area_id   = htonl(rc_rd->area_id);
-	hello_hdr.checksum  = 0; /* also adjusted later */
-	hello_hdr.auth_type = AUTH_TYPE_NULL;
+	hello_hdr.network_mask.s_addr = rc_rd->ip_addr.ipv4.netmask.s_addr;
+	hello_hdr.hello_interval      = rc_rd->hello_interval ? htons(rc_rd->hello_interval) :
+		htons(OSPF_DEFAULT_HELLO_INTERVAL);
+
 
 	buf_add(packet_buffer, (char *) &hello_hdr, sizeof(struct hello_ipv4_std_header));
 
 	return SUCCESS;
 }
+
 
 static int tx_ipv4_buffer(const struct ospfd *ospfd, struct buf *packet_buffer)
 {
@@ -149,6 +169,8 @@ static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct rc_rd *rc_rd)
 
 	tx_prepare_ospf_std_header(ospfd, packet_buffer, rc_rd);
 
+	tx_prepare_ospf_hello_header(ospfd, packet_buffer, rc_rd);
+
 	/* and set length of packet within the IPv4 header and recalculate
 	 * the IPv4 header checksum */
 	ipv4_hdr_set_total_length(packet_buffer, buf_len(packet_buffer));
@@ -171,12 +193,15 @@ static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct rc_rd *rc_rd)
 /* this function is called in regular intervals by the event loop */
 void tx_ipv4_hello_packet(int fd, void *priv_data)
 {
-	int ret;
+	int ret, hello_interval;
 	struct tx_hello_arg *txha = priv_data;
 	struct ospfd *ospfd = txha->ospfd;
 	struct rc_rd *rc_rd = txha->rc_rd;
 
 	msg(ospfd, VERBOSE, "generate new HELLO packet");
+
+	hello_interval = rc_rd->hello_interval ?
+		rc_rd->hello_interval : OSPF_DEFAULT_HELLO_INTERVAL;
 
 	/* first of all - disarm the timer_fd and do some
 	 * sanity checks */
@@ -192,8 +217,7 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 	}
 
 	/* and rearm the timer */
-	ret = timer_add_s_rel(ospfd, OSPF_DEFAULT_HELLO_INTERVAL,
-			tx_ipv4_hello_packet, priv_data);
+	ret = timer_add_s_rel(ospfd, hello_interval, tx_ipv4_hello_packet, priv_data);
 	if (ret != SUCCESS) {
 		err_msg("Can't add timer for HELLO packet generation");
 		return;

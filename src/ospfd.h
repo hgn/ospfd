@@ -116,7 +116,9 @@ struct rc_rd {
 	char description[MAX_LEN_DESCRIPTION];
 	uint32_t area_id;
 	uint32_t metric;
+	uint16_t hello_interval;
 	struct ip_addr ip_addr;
+	struct ip_addr netmask;
 };
 
 #define	EVENT_BACKING_STORE_HINT 64

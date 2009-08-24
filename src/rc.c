@@ -158,6 +158,14 @@ void rc_set_description(char *interface, char *description)
 	free(interface); free(description);
 }
 
+void rc_set_hello_interval(char *interface, char *interval)
+{
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+
+	rc_rd->hello_interval = atoi(interval);
+
+	free(interface); free(interval);
+}
 
 void rc_show_interface(char *interface)
 {
