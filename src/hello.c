@@ -5,9 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <netinet/ip.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "ospfd.h"
 #include "network.h"

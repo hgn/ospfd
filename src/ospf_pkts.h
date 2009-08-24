@@ -2,6 +2,8 @@
 #define OSPF_PHT_H
 
 #include <inttypes.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "ospfd.h"
 

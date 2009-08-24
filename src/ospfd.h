@@ -96,8 +96,16 @@ struct rd {
 	struct list_e *ip_addr_list;
 };
 
+struct stats {
+	long long packets_rx;
+	long long ospf_rx;
+	long long hello_rx;
+	long long hello_tx;
+};
+
 struct network {
 	int fd;
+	struct stats stats;
 	struct list_e *rd_list;
 };
 

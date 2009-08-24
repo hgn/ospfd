@@ -9,8 +9,6 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "network.h"
 #include "shared.h"
@@ -263,7 +261,7 @@ int init_network(struct ospfd *ospfd)
 			}
 			/* and register fd */
 			flags = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-			ret = ev_add(ospfd, ospfd->network.fd, packet_input, NULL, flags, EVENT_REPEAT);
+			ret = ev_add(ospfd, ospfd->network.fd, packet_input, ospfd, flags, EVENT_REPEAT);
 			if (ret < 0) {
 				err_msg("cannot at RAW socket to event mechanism");
 				return FAILURE;

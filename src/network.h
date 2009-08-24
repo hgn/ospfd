@@ -1,7 +1,12 @@
 #ifndef NETWORK_H
 #define	NETWORK_H
 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netinet/ip.h>
+
 #include "ospfd.h"
+#include "ospf_pkts.h"
 
 #ifndef IPPROTO_OSPF
 #define IPPROTO_OSPF 89
