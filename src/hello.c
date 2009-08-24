@@ -126,11 +126,11 @@ static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
 
 static uint8_t get_hello_options(struct ospfd *ospfd, struct rc_rd *rc_rd)
 {
-	uint8_t options;
+	uint8_t options = 0;
 
 	(void) ospfd; (void) rc_rd;
 
-	/* FIXME: make this configurable */
+	/* FIXME: make this configurable and dynamic */
 	options |= OSPF_HELLO_OPTION_L;
 	options |= OSPF_HELLO_OPTION_E;
 
@@ -152,7 +152,7 @@ static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 	hello_hdr.hello_interval      = rc_rd->hello_interval ? htons(rc_rd->hello_interval) :
 		htons(OSPF_DEFAULT_HELLO_INTERVAL);
 
-	hello_hdr.options = htons(get_hello_options(ospfd, rc_rd));
+	hello_hdr.options = get_hello_options(ospfd, rc_rd);
 
 	/* TODO: make then configurable */
 	hello_hdr.priority = htons(OSPF_DEFAULT_ROUTER_PRIORITY);
