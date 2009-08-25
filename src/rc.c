@@ -112,15 +112,22 @@ void rc_set_area(char *interface, char *area)
 	free(interface); free(area);
 }
 
-void rc_set_metric(char *interface, char *metric)
+void rc_set_costs(char *interface, char *costs)
 {
 	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
 
 	/* and save the value */
-	rc_rd->metric = atoi(metric);
+	rc_rd->costs = atoi(costs);
+
+	/* 9. - The Interface Data Structure: The cost of an interface must
+       be greater than zero. */
+	if (rc_rd->costs < 1) {
+		msg(xospfd, DEBUG, "configured link costs are to small - adjust to 1");
+		rc_rd->costs = 1;
+	}
 
 	/* allocated via lexer - can be freed now */
-	free(interface); free(metric);
+	free(interface); free(costs);
 }
 
 void rc_set_ipv4_address(char *interface, char *ip, char *netmask)
@@ -193,8 +200,8 @@ void rc_show_interface(char *interface)
 			err_msg_die(EXIT_FAILURE, "Programmed error - protocol not supported");
 	}
 
-	fprintf(stderr, "Interface: %s Area: %d Metric %d IP: %s Netmask %s\n",
-			rc_rd->if_name, rc_rd->area_id, rc_rd->metric, addr, mask);
+	fprintf(stderr, "Interface: %s Area: %d Costs %d IP: %s Netmask %s\n",
+			rc_rd->if_name, rc_rd->area_id, rc_rd->costs, addr, mask);
 
 	free(interface);
 }

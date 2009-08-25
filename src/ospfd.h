@@ -113,14 +113,63 @@ struct network {
 
 #define	MAX_LEN_DESCRIPTION 1024
 
+
+/* Section 9. - The Interface Data Structure */
 struct rc_rd {
+
+	/* The name of the interface, e.g. eth0, ... */
 	char if_name[IF_NAMESIZE];
+
+	/* A short description of this interface (for
+       more usefull error/debug or status messages if
+       several interfaces are available */
 	char description[MAX_LEN_DESCRIPTION];
+
+	/* The Area ID of the area to which the attached network
+       belongs. All routing protocol packets originating from
+       the interface are labelled with this Area ID. */
 	uint32_t area_id;
-	uint32_t metric;
+
+	/* The cost of sending a data packet on the interface,
+       expressed in the link state metric. This is advertised
+       as the link cost for this interface in the router-LSA.
+       The cost of an interface must be greater than zero. */
+	uint32_t costs;
+
+	/* HelloInterval - The length of time, in seconds, between
+       the Hello packets that the router sends on the interface.
+       Advertised in Hello packets sent out this interface. */
 	uint16_t hello_interval;
+
+	/* IP interface address & IP interface mask:
+	   The IP address associated with the interface.
+       This appears as the IP source address in all routing
+       protocol packets originated over this interface.
+       Interfaces to unnumbered point-to-point networks do not
+       have an associated IP address.
+       Also referred to as the subnet mask, this indicates the portion
+       of the IP interface address that identifies the attached network.
+       Masking the IP interface address with the IP interface
+       mask yields the IP network number of the attached network.  On
+       point-to-point networks and virtual links, the IP interface mask
+       is not defined. On these networks, the link itself is not
+       assigned an IP network number, and so the addresses of each side
+       of the link are assigned independently, if they are assigned at
+       all. */
 	struct ip_addr ip_addr;
-	struct ip_addr netmask;
+
+	/* The number of seconds before the router's neighbors will declare
+       it down, when they stop hearing the router's Hello Packets.
+       Advertised in Hello packets sent out this interface. */
+	uint16_t router_dead_interval;
+
+	/* The estimated number of seconds it takes to transmit a Link
+       State Update Packet over this interface.  LSAs contained in the
+       Link State Update packet will have their age incremented by this
+       amount before transmission.  This value should take into account
+       transmission and propagation delays; it must be greater than
+       zero. */
+	uint16_t inf_trans_delay;
 };
 
 #define	EVENT_BACKING_STORE_HINT 64

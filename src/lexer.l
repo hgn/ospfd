@@ -23,7 +23,7 @@ router-id                        { return ROUTERID; }
 prefix                           { return PREFIX; }
 set                              { return SET; }
 interface                        { return INTERFACE; }
-metric                           { return METRIC; }
+costs                            { return COSTS; }
 show                             { return SHOW; }
 ipv4                             { return IPV4; }
 ipv6                             { return IPV6; }

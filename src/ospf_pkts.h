@@ -25,13 +25,44 @@
 
 #define	AUTH_TYPE_NULL 0
 
+/* 8.1.  Sending protocol packets */
 struct hello_ipv4_std_header {
+
+	/* Version -- set to 2, the version number of the protocol as
+	   documented in this specification. */
 	uint8_t version;
+
+	/* Type -- The type of OSPF packet, such as Link state Update
+       or Hello packet */
 	uint8_t type;
+
+	/* Packet length -- The length of the entire OSPF packet in
+       bytes, including the standard OSPF packet header. */
 	uint16_t length;
+
+	/* Router ID -- The identity of the router itself (who is
+       originating the packet). */
 	uint32_t router_id;
+
+	/* Area ID -- The OSPF area that the packet is being sent into. */
 	uint32_t area_id;
+
+	/* Checksum -- The standard IP 16-bit one's complement
+	   checksum of the entire OSPF packet, excluding the 64-bit
+       authentication field. This checksum is calculated as part
+       of the appropriate authentication procedure; for some OSPF
+       authentication types, the checksum calculation is omitted.
+       See Section D.4 for details. */
 	uint16_t checksum;
+
+	/* AuType and Authentication -- Each OSPF packet exchange is
+       authenticated.  Authentication types are assigned by the
+       protocol and are documented in Appendix D. A different
+       authentication procedure can be used for each IP network/subnet.
+       Autype indicates the type of authentication procedure in use.
+       The 64-bit authentication field is then for use by the chosen
+       authentication procedure.  This procedure should be the last
+       called when forming the packet to be sent. See Section D.4 for details. */
 	uint16_t auth_type;
 	union
 	{
@@ -46,6 +77,7 @@ struct hello_ipv4_std_header {
 	} u;
 };
 
+/* Section  9.5 */
 struct ipv4_hello_header {
 	struct in_addr network_mask;
 	uint16_t hello_interval;
