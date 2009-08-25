@@ -102,7 +102,7 @@ static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
 	memset(&std_hdr, 0, sizeof(struct hello_ipv4_std_header));
 
 	std_hdr.version   = OSPF2_VERSION;
-	std_hdr.type      = MESSAGE_TYPE_HELLO;
+	std_hdr.type      = MSG_TYPE_HELLO;
 	std_hdr.length    = 0; /* is adjusted later on */
 	/* The router id can the IPv4 address as well! - More compatibel then? */
 	std_hdr.router_id = htonl(ospfd->router_id);

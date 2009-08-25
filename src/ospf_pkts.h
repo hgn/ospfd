@@ -16,7 +16,12 @@
 
 #define	OSPF2_VERSION 2
 
-#define	MESSAGE_TYPE_HELLO 1
+/* 4.3. Routing protocol packets */
+#define	MSG_TYPE_HELLO                1 /* Discover and maintain  neighbors */
+#define	MSG_TYPE_DATABASE_DESCRIPTION 2 /* Summarize database contents */
+#define	MSG_TYPE_LINK_STATE_REQUEST   3 /* Database download */
+#define	MSG_TYPE_LINK_STATE_UPDATE    4 /* Database update */
+#define	MSG_TYPE_LINK_STATE_ACK       5 /* Flooding acknowledgment */
 
 #define	AUTH_TYPE_NULL 0
 
