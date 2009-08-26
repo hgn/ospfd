@@ -113,6 +113,81 @@ struct network {
 
 #define	MAX_LEN_DESCRIPTION 1024
 
+/* 9.1.  Interface states - The various states that router interfaces
+   may attain is documented in this section.  The states are listed in order of
+   progressing functionality.  For example, the inoperative state
+   is listed first, followed by a list of intermediate states
+   before the final, fully functional state is achieved. */
+
+enum {
+	/* Down - in this is the initial interface state.  In this state, the
+	   lower-level protocols have indicated that the interface is
+	   unusable.  No protocol traffic at all will be sent or
+	   received on such a interface.  In this state, interface
+	   parameters should be set to their initial values.  All
+	   interface timers should be disabled, and there should be no
+	   adjacencies associated with the interface. */
+	INF_STATE_DOWN = 1,
+
+	/* Loopback - in this state, the router's interface to the network is
+       looped back. The interface may be looped back in hardware
+	   or software. The interface will be unavailable for regular
+	   data traffic. However, it may still be desirable to gain
+	   information on the quality of this interface, either through
+	   sending ICMP pings to the interface or through something
+	   like a bit error test.  For this reason, IP packets may
+	   still be addressed to an interface in Loopback state. To
+       facilitate this, such interfaces are advertised in router-
+       LSAs as single host routes, whose destination is the IP
+       interface address. */
+	INF_STATE_LOOPBACK,
+
+	/* Waiting - in this state, the router is trying to determine the
+       identity of the (Backup) Designated Router for the network.
+	   To do this, the router monitors the Hello Packets it
+	   receives.  The router is not allowed to elect a Backup
+	   Designated Router nor a Designated Router until it
+	   transitions out of Waiting state.  This prevents unnecessary
+	   changes of (Backup) Designated Router. */
+	INF_STATE_WAITING,
+
+	/* Point-to-point - in this state, the interface is operational,
+       and connects either to a physical point-to-point network or
+       to a virtual link. Upon entering this state, the router attempts
+       to form an adjacency with the neighboring router. Hello Packets
+       are sent to the neighbor every HelloInterval seconds. */
+	INF_STATE_POINT_TO_POINT,
+
+	/* DR Other - The interface is to a broadcast or NBMA network on which
+       another router has been selected to be the Designated
+	   Router.  In this state, the router itself has not been
+	   selected Backup Designated Router either.  The router forms
+	   adjacencies to both the Designated Router and the Backup
+	   Designated Router (if they exist). */
+	INF_STATE_DR_OTHER,
+
+    /* Backup - in this state, the router itself is the Backup Designated
+       Router on the attached network.  It will be promoted to
+	   Designated Router when the present Designated Router fails.
+	   The router establishes adjacencies to all other routers
+	   attached to the network.  The Backup Designated Router
+	   performs slightly different functions during the Flooding
+	   Procedure, as compared to the Designated Router (see Section
+	   13.3).  See Section 7.4 for more details on the functions
+	   performed by the Backup Designated Router. */
+	INF_STATE_BACKUP,
+
+	/* DR - in this state, this router itself is the Designated Router
+       on the attached network.  Adjacencies are established to all
+	   other routers attached to the network.  The router must also
+	   originate a network-LSA for the network node.  The network-
+	   LSA will contain links to all routers (including the
+	   Designated Router itself) attached to the network.  See
+	   Section 7.3 for more details on the functions performed by
+	   the Designated Router. */
+	INF_STATE_DR
+};
+
 
 /* Section 9. - The Interface Data Structure */
 struct rc_rd {
@@ -124,6 +199,12 @@ struct rc_rd {
        more usefull error/debug or status messages if
        several interfaces are available */
 	char description[MAX_LEN_DESCRIPTION];
+
+	/* State - The functional level of an interface. State
+	   determines whether or not full adjacencies are allowed
+	   to form over the interface. State is also reflected in
+	   the router's LSAs. */
+	unsigned int state;
 
 	/* The Area ID of the area to which the attached network
        belongs. All routing protocol packets originating from
