@@ -75,6 +75,25 @@ int parse_rc_file(struct ospfd *ospfd)
 	return SUCCESS;
 }
 
+static struct rc_rd *init_new_rc_rd(struct ospfd *ospfd, char *inf_name)
+{
+	struct rc_rd *rc_rd;
+
+	rc_rd = xzalloc(sizeof(struct rc_rd));
+
+	/* insert into global rc_rd list */
+	xospfd->rc_rd_list = list_insert_after(ospfd->rc_rd_list, rc_rd);
+
+	/* save interface name */
+	memcpy(rc_rd->if_name, inf_name,
+			min((strlen(inf_name) + 1), sizeof(rc_rd->if_name)));
+
+	/* set default values for the interface */
+	rc_rd->state = INF_STATE_DOWN;
+
+	return rc_rd;
+}
+
 static int search_rc_rd_for_interface(void *d1, void *d2)
 {
 	struct rc_rd *rc_rd = (struct rc_rd *) d1;
@@ -90,10 +109,7 @@ static struct rc_rd *get_rc_rd_by_interface(struct ospfd *ospfd, char *interface
 
 	list = list_search(ospfd->rc_rd_list, search_rc_rd_for_interface, interface);
 	if (list == NULL) {
-		rc_rd = xzalloc(sizeof(struct rc_rd));
-		xospfd->rc_rd_list = list_insert_after(xospfd->rc_rd_list, rc_rd);
-		memcpy(rc_rd->if_name, interface,
-				min((strlen(interface) + 1), sizeof(rc_rd->if_name)));
+		rc_rd = init_new_rc_rd(xospfd, interface);
 	} else {
 		rc_rd = list->data;
 	}
