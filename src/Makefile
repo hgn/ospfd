@@ -11,6 +11,7 @@ OBJ=buf.o        \
 		lex.yy.o     \
 		rc.o         \
 		clist.o      \
+		nbr.o        \
 		ospfd.o
 
 TARGET=ospfd

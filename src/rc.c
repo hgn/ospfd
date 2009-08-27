@@ -14,6 +14,7 @@
 #include "ospfd.h"
 #include "shared.h"
 #include "rc.h"
+#include "nbr.h"
 
 extern FILE *yyin;
 
@@ -77,9 +78,7 @@ int parse_rc_file(struct ospfd *ospfd)
 
 static struct rc_rd *init_new_rc_rd(struct ospfd *ospfd, char *inf_name)
 {
-	struct rc_rd *rc_rd;
-
-	rc_rd = xzalloc(sizeof(struct rc_rd));
+	struct rc_rd *rc_rd = alloc_rc_rd();
 
 	/* insert into global rc_rd list */
 	xospfd->rc_rd_list = list_insert_after(ospfd->rc_rd_list, rc_rd);
@@ -87,9 +86,6 @@ static struct rc_rd *init_new_rc_rd(struct ospfd *ospfd, char *inf_name)
 	/* save interface name */
 	memcpy(rc_rd->if_name, inf_name,
 			min((strlen(inf_name) + 1), sizeof(rc_rd->if_name)));
-
-	/* set default values for the interface */
-	rc_rd->state = INF_STATE_DOWN;
 
 	return rc_rd;
 }
@@ -226,6 +222,15 @@ void rc_set_id(char *id)
 {
 	xospfd->router_id = atoi(id);
 	free(id);
+}
+
+void rc_set_interface_up(char *interface)
+{
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+
+	nbr_set_state(xospfd, rc_rd, INF_EV_INTERFACE_UP);
+
+	free(interface);
 }
 
 

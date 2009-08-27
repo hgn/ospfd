@@ -34,41 +34,6 @@ static void free_ospfd(struct ospfd *o)
 }
 
 
-static void init_standard_timers(void *d1, void *d2)
-{
-	int ret, first_hello_start;
-	struct rc_rd *rc_rd = (struct rc_rd *) d1;
-	struct ospfd *ospfd = (struct ospfd *) d2;
-	struct tx_hello_arg *txha;
-
-	txha = xzalloc(sizeof(struct tx_hello_arg));
-	txha->ospfd = ospfd;
-	txha->rc_rd = rc_rd;
-
-	/* we start with our HELLO emission after 1 second
-	 * after daemon start - should we jitter here or increase/decrease
-	 * this value? Hopefully not! ;-) */
-	first_hello_start = 1;
-
-	/* initialize timer for regular HELLO packet transmission */
-	ret = timer_add_s_rel(ospfd, first_hello_start, tx_ipv4_hello_packet, txha);
-	if (ret != SUCCESS) {
-		err_msg("Can't add timer for HELLO packet generation");
-		return;
-	}
-
-	return;
-}
-
-static int initiate_exchange(struct ospfd *ospfd)
-{
-	/* for each configure interface one timer */
-	list_for_each_with_arg(ospfd->rc_rd_list, init_standard_timers, ospfd);
-
-	return SUCCESS;
-}
-
-
 int main(int ac, char **av)
 {
 	int ret;
@@ -82,10 +47,6 @@ int main(int ac, char **av)
 
 	msg(ospfd, GENTLE, PROGRAMNAME " - " VERSIONSTRING);
 
-	ret = parse_rc_file(ospfd);
-	if (ret != SUCCESS)
-		err_msg_die(EXIT_FAILURE, "Can't parse configuration file");
-
 	/* initialize event subsystem. In this case this belongs
 	 * to open a epoll filedescriptor */
 	ret = ev_init(ospfd);
@@ -93,15 +54,14 @@ int main(int ac, char **av)
 		err_msg_die(EXIT_FAILURE, "Can't initialize event subsystem");
 
 
+	ret = parse_rc_file(ospfd);
+	if (ret != SUCCESS)
+		err_msg_die(EXIT_FAILURE, "Can't parse configuration file");
+
+
 	ret = init_network(ospfd);
 	if (ret != SUCCESS)
 		err_msg_die(EXIT_FAILURE, "Can't initialize network subsystem");
-
-	/* initialize for every configure interface a HELLO interval */
-	ret = initiate_exchange(ospfd);
-	if (ret != SUCCESS)
-		err_msg_die(EXIT_FAILURE, "Failed to setup standard timers - exiting now");
-
 
 	/* and branch into the main loop
 	 * This loop will return (with the exception of SIGINT or failure

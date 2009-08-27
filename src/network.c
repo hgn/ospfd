@@ -241,7 +241,9 @@ next:
 
 	freeifaddrs(ifaddr);
 
+#if 0
 	list_for_each(ospfd->network.rd_list, print_all_interfaces);
+#endif
 
 	return SUCCESS;
 }

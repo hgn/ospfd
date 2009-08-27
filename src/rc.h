@@ -11,6 +11,7 @@ void rc_set_ipv4_address(char *, char *, char *);
 void rc_set_description(char *, char *);
 void rc_set_hello_interval(char *, char *);
 void rc_set_id(char *);
+void rc_set_interface_up(char *);
 
 #endif /* RC_H */
 

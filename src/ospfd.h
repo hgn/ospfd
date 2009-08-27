@@ -188,6 +188,11 @@ enum {
 	INF_STATE_DR
 };
 
+enum {
+	INF_EV_INTERFACE_UP = 1,
+	INF_EV_INTERFACE_DOWN
+};
+
 
 /* Section 9. - The Interface Data Structure */
 struct rc_rd {
@@ -268,6 +273,19 @@ struct ospfd {
 	struct ev ev;
 	struct list_e *rc_rd_list;
 };
+
+/* a wrapper struct to expand the limitation
+   of one timer argument and introduce a wrapper
+   struct that contains the ospfd and the rc_rd
+   struct */
+struct tx_hello_arg {
+	struct ospfd *ospfd;
+	/* rc_rd is a pointer to the actual
+	 * domain that should be processed by this
+	 * particular callback */
+	struct rc_rd *rc_rd;
+};
+
 
 /* cli_opt.c */
 int parse_cli_options(struct ospfd *, int, char **);
