@@ -14,7 +14,7 @@ msg(struct ospfd *ospfd, const int level, const char *format, ...)
 {
 	va_list ap;
 
-	 if (level > ospfd->opts.verbose_level)
+	 if (level + 1 >= ospfd->opts.verbose_level)
 		 return;
 
 	 va_start(ap, format);

@@ -229,7 +229,7 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 	struct ospfd *ospfd = txha->ospfd;
 	struct rc_rd *rc_rd = txha->rc_rd;
 
-	msg(ospfd, VERBOSE, "generate new HELLO packet");
+	msg(ospfd, VERBOSE, "generate new hello packet");
 
 	hello_interval = rc_rd->hello_interval ?
 		rc_rd->hello_interval : OSPF_DEFAULT_HELLO_INTERVAL;
