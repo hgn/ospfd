@@ -6,7 +6,7 @@
 #include <netinet/ip.h>
 
 #include "ospfd.h"
-#include "ospf_pkts.h"
+#include "ospf_packets.h"
 
 #ifndef IPPROTO_OSPF
 #define IPPROTO_OSPF 89

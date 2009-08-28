@@ -1,5 +1,5 @@
-#ifndef OSPF_PHT_H
-#define OSPF_PHT_H
+#ifndef OSPF_PACKETS_H
+#define OSPF_PACKETS_H
 
 #include <inttypes.h>
 #include <netinet/in.h>
@@ -100,6 +100,6 @@ struct db_description
 
 
 
-#endif /* OSPF_PHT_H */
+#endif /* OSPF_PACKETS_H */
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */

@@ -4,7 +4,7 @@
 #include <inttypes.h>
 
 #include "ospfd.h"
-#include "ospf_pkts.h"
+#include "ospf_packets.h"
 
 void tx_ipv4_hello_packet(int, void *);
 
