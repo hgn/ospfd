@@ -38,6 +38,7 @@ char * xstrdup(const char *);
 void xsetsockopt(int, int, int, const void *, socklen_t, const char *);
 int xsnprintf(char *, size_t , const char *, ...);
 unsigned long long xstrtoull(const char *);
+int xatoi(const char *);
 void *get_in_addr(struct sockaddr *);
 void msg(struct ospfd *, const int , const char *, ...);
 

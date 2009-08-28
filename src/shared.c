@@ -135,6 +135,40 @@ xstrtoull(const char *str)
 	return val;
 }
 
+int
+xatoi(const char *str)
+{
+	long val;
+	char *endptr;
+
+	val = strtol(str, &endptr, 10);
+	if ((val == LONG_MIN || val == LONG_MAX) && errno != 0) {
+		err_sys_die(EXIT_FAILURE, "strtoll failure");
+	}
+
+	if (endptr == str) {
+		err_msg_die(EXIT_FAILURE, "No digits found in commandline");
+	}
+
+	if (val > INT_MAX) {
+		err_msg("xatoi: value %ld to large to fit into a integer "
+				"- process with INT_MAX!", val);
+		return INT_MAX;
+	}
+
+	else if (val < INT_MIN) {
+		err_msg("xatoi: value %ld to small to fit into a integer "
+				"- process with INT_MIN!", val);
+		return INT_MIN;
+	}
+
+	if ('\0' != *endptr) {
+		err_msg_die(EXIT_FAILURE, "To many characters on input: \"%s\"", str);
+	}
+
+	return val;
+}
+
 void *
 get_in_addr(struct sockaddr *sa)
 {
