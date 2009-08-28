@@ -256,6 +256,14 @@ struct rc_rd {
        transmission and propagation delays; it must be greater than
        zero. */
 	uint16_t inf_trans_delay;
+
+	/* Router Priority - An 8-bit unsigned integer.  When two routers
+	   attached to a network both attempt to become Designated Router,
+	   the one with the highest Router Priority takes precedence.
+	   A router whose Router Priority is set to 0 is ineligible to become
+	   Designated Router on the attached network. Advertised in Hello
+	   packets sent out this interface. */
+	uint8_t router_priority;
 };
 
 #define	EVENT_BACKING_STORE_HINT 64

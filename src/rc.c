@@ -233,5 +233,22 @@ void rc_set_interface_up(char *interface)
 	free(interface);
 }
 
+void rc_set_router_priority(char *interface, char *router_priority)
+{
+	int val;
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+
+	val = xatoi(router_priority);
+	if (val < 0) {
+		msg(xospfd, GENTLE, "router priority negativ: %d - must be positiv!"
+				" The programm falls back to 0 - no DR & no BDR possibility!",
+				val);
+		val = OSPF_DEFAULT_ROUTER_PRIORITY;
+	}
+
+	rc_rd->router_priority = val;
+
+	free(interface); free(router_priority);
+}
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */

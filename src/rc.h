@@ -12,6 +12,7 @@ void rc_set_description(char *, char *);
 void rc_set_hello_interval(char *, char *);
 void rc_set_id(char *);
 void rc_set_interface_up(char *);
+void rc_set_router_priority(char *, char *);
 
 #endif /* RC_H */
 

@@ -30,6 +30,7 @@ ipv6                             { return IPV6; }
 description                      { return DESCRIPTION; }
 address                          { return ADDRESS; }
 hello-interval                   { return HELLOINTERVAL; }
+router-priority                  { return ROUTERPRIORITY; }
 up                               { return UP; }
 [a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word = strdup(yytext); return WORD; }
 =                                { return EQUAL; }

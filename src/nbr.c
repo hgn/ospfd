@@ -14,6 +14,7 @@ struct rc_rd *alloc_rc_rd(void)
 
 	/* set default values for the interface */
 	rc_rd->state = INF_STATE_DOWN;
+	rc_rd->router_priority = OSPF_DEFAULT_ROUTER_PRIORITY;
 
 	return rc_rd;
 }
