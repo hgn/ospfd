@@ -248,6 +248,45 @@ next:
 	return SUCCESS;
 }
 
+/* Fletcher Checksum - RFC 1008 */
+uint16_t calc_fl_checksum(char *buf, uint16_t pos, uint16_t len)
+{
+	char *data = buf;
+	int c0 = 0, c1 = 0, x;
+	uint16_t offset;
+
+	offset = len - pos - 1;
+
+	/* skip age field */
+	data += 2;
+	len -= 2;
+
+	while (len--) {
+		c0 += *data++;
+		c1 += c0;
+		if ((len & 0xfff) == 0) {
+			c0 %= 255;
+			c1 %= 255;
+		}
+	}
+
+	/* ! validata mode */
+	if (pos) {
+		x = (int)(offset * c0 - c1) % 255;
+
+		if (x <= 0) {
+			x += 255;
+		}
+		c1 = 510 - c0 - x;
+		if (c1 > 255) {
+			c1 -= 255;
+		}
+		c0 = x;
+	}
+
+	return htons((c0 << 8) | (c1 & 0xff1));
+}
+
 
 int init_network(struct ospfd *ospfd)
 {

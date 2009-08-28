@@ -154,8 +154,10 @@ static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 
 	hello_hdr.options = get_hello_options(ospfd, rc_rd);
 
-	/* TODO: make then configurable */
-	hello_hdr.priority = htons(OSPF_DEFAULT_ROUTER_PRIORITY);
+	/* this is a user defined option for the interface
+	 * or 1 (default willingness) in the case that the user touched
+	 * nothing */
+	hello_hdr.priority = rc_rd->router_priority;
 
 	/* TODO: make then configurable */
 	hello_hdr.dead_interval = htonl(OSPF_DEFAULT_ROUTER_DEAD_INTERVAL);
