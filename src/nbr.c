@@ -13,8 +13,9 @@ struct rc_rd *alloc_rc_rd(void)
 	rc_rd = xzalloc(sizeof(struct rc_rd));
 
 	/* set default values for the interface */
-	rc_rd->state = INF_STATE_DOWN;
-	rc_rd->router_priority = OSPF_DEFAULT_ROUTER_PRIORITY;
+	rc_rd->state                = INF_STATE_DOWN;
+	rc_rd->router_priority      = OSPF_DEFAULT_ROUTER_PRIORITY;
+	rc_rd->router_dead_interval = OSPF_DEFAULT_ROUTER_DEAD_INTERVAL;
 
 	return rc_rd;
 }

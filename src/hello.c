@@ -177,8 +177,7 @@ static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 	 * nothing */
 	hello_hdr.priority = rc_rd->router_priority;
 
-	/* TODO: make then configurable */
-	hello_hdr.dead_interval = htonl(OSPF_DEFAULT_ROUTER_DEAD_INTERVAL);
+	hello_hdr.dead_interval = htonl(rc_rd->router_dead_interval);
 
 	buf_add(packet_buffer, (char *) &hello_hdr, sizeof(struct hello_ipv4_std_header));
 

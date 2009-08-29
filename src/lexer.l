@@ -31,6 +31,7 @@ description                      { return DESCRIPTION; }
 address                          { return ADDRESS; }
 hello-interval                   { return HELLOINTERVAL; }
 router-priority                  { return ROUTERPRIORITY; }
+router-dead-interval             { return ROUTERDEADINTERVAL; }
 up                               { return UP; }
 [a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word = strdup(yytext); return WORD; }
 =                                { return EQUAL; }

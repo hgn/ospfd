@@ -241,8 +241,8 @@ void rc_set_router_priority(char *interface, char *router_priority)
 	val = xatoi(router_priority);
 	if (val < 0) {
 		msg(xospfd, GENTLE, "router priority negativ: %d - must be positiv!"
-				" The programm falls back to 0 - no DR & no BDR possibility!",
-				val);
+				" The programm falls back to the default %u !",
+				OSPF_DEFAULT_ROUTER_PRIORITY);
 		val = OSPF_DEFAULT_ROUTER_PRIORITY;
 	}
 
@@ -250,5 +250,24 @@ void rc_set_router_priority(char *interface, char *router_priority)
 
 	free(interface); free(router_priority);
 }
+
+void rc_set_router_dead_interval(char *interface, char *router_dead_interval)
+{
+	int val;
+	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+
+	val = xatoi(router_dead_interval);
+	if (val < 0) {
+		msg(xospfd, GENTLE, "router dead interval negativ: %u - must be positiv!"
+				" The programm falls back to the default value (%d sec)!",
+				OSPF_DEFAULT_ROUTER_DEAD_INTERVAL);
+		val = OSPF_DEFAULT_ROUTER_DEAD_INTERVAL;
+	}
+
+	rc_rd->router_dead_interval = val;
+
+	free(interface); free(router_dead_interval);
+}
+
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */

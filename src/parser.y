@@ -21,6 +21,7 @@ int yylex(void);
 
 %token EQUAL AREA ROUTERID PREFIX INTERFACE SET COSTS SHOW
 %token IPV4 IPV6 ADDRESS DESCRIPTION HELLOINTERVAL UP ROUTERPRIORITY
+%token ROUTERDEADINTERVAL
 
 %token <word>  WORD
 
@@ -40,6 +41,7 @@ command: INTERFACE WORD SET AREA WORD    { rc_set_area($2, $5); }
     |    INTERFACE WORD SET HELLOINTERVAL WORD  { rc_set_hello_interval($2, $5);   }
     |    INTERFACE WORD UP               { rc_set_interface_up($2);   }
 		|    INTERFACE WORD SET ROUTERPRIORITY WORD  { rc_set_router_priority($2, $5); }
+		|    INTERFACE WORD SET ROUTERDEADINTERVAL WORD  { rc_set_router_dead_interval($2, $5); }
     |    SET ROUTERID WORD               { rc_set_id($3); }
     ;
 
