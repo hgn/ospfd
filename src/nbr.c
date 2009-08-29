@@ -19,7 +19,7 @@ struct rc_rd *alloc_rc_rd(void)
 
 	/* initialize the list of (hopefully) upcoming neighbors
 	   for this interface */
-	rc_rd->neighbor_list = list_create();
+	rc_rd->neighbor_router_list = list_create();
 
 	return rc_rd;
 }
