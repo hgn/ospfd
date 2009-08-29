@@ -17,6 +17,10 @@ struct rc_rd *alloc_rc_rd(void)
 	rc_rd->router_priority      = OSPF_DEFAULT_ROUTER_PRIORITY;
 	rc_rd->router_dead_interval = OSPF_DEFAULT_ROUTER_DEAD_INTERVAL;
 
+	/* initialize the list of (hopefully) upcoming neighbors
+	   for this interface */
+	rc_rd->neighbor_list = list_create();
+
 	return rc_rd;
 }
 

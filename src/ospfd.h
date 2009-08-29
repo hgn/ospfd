@@ -193,6 +193,8 @@ enum {
 	INF_EV_INTERFACE_DOWN
 };
 
+/* forward declaration - see nbr.h */
+struct neighbor;
 
 /* Section 9. - The Interface Data Structure */
 struct rc_rd {
@@ -264,6 +266,8 @@ struct rc_rd {
 	   Designated Router on the attached network. Advertised in Hello
 	   packets sent out this interface. */
 	uint8_t router_priority;
+
+	struct list_e *neighbor_list;
 };
 
 #define	EVENT_BACKING_STORE_HINT 64
