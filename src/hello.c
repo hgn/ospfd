@@ -65,7 +65,7 @@ static void hex_dump_ipv4_packet(struct buf *packet_buffer)
 }
 
 
-static int tx_prepare_ipv4_std_header(struct ospfd *ospfd,
+static size_t tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 		struct buf *packet_buffer, struct rc_rd *rc_rd)
 {
 	struct iphdr ip;
@@ -87,9 +87,9 @@ static int tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 	ip.saddr = rc_rd->ip_addr.ipv4.addr.s_addr;
 	ip.daddr = inet_addr(MCAST_ALL_SPF_ROUTERS);
 
-	buf_add(packet_buffer, (char *) &ip, sizeof(struct ip));
+	buf_add(packet_buffer, (char *) &ip, sizeof(struct iphdr));
 
-	return SUCCESS;
+	return sizeof(struct iphdr);
 }
 
 static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
@@ -131,10 +131,28 @@ static uint8_t get_hello_options(struct ospfd *ospfd, struct rc_rd *rc_rd)
 	(void) ospfd; (void) rc_rd;
 
 	/* FIXME: make this configurable and dynamic */
-	options |= OSPF_HELLO_OPTION_L;
+	//options |= OSPF_HELLO_OPTION_L;
 	options |= OSPF_HELLO_OPTION_E;
 
 	return options;
+}
+
+static void recalc_ospf_hdr_csum(struct buf *packet_buffer)
+{
+	struct hello_ipv4_std_header *h = buf_addr(packet_buffer) +
+		sizeof(struct iphdr);
+
+	h->checksum = calc_fl_checksum((char *)h,
+			buf_len(packet_buffer) - sizeof(struct iphdr), 14);
+
+	return;
+}
+
+static void tx_set_ospf_standard_header_length(struct buf *packet_buffer, size_t ip_hdr_len)
+{
+	struct hello_ipv4_std_header *std_hdr = buf_addr(packet_buffer) + ip_hdr_len;
+
+	std_hdr->length = htons(buf_len(packet_buffer) - ip_hdr_len);
 }
 
 static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
@@ -192,17 +210,28 @@ static int tx_ipv4_buffer(const struct ospfd *ospfd, struct buf *packet_buffer)
 static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct rc_rd *rc_rd)
 {
 	struct buf *packet_buffer;
+	size_t ip_hdr_len;
 
 	/* allocate a packet buffer - in the next couple
 	 * of steps this buffer is increased and filled with
 	 * data and finally pushed on the wire */
 	packet_buffer = buf_alloc_hint(DEFAULT_MTU_SIZE);
 
-	tx_prepare_ipv4_std_header(ospfd, packet_buffer, rc_rd);
+	ip_hdr_len = tx_prepare_ipv4_std_header(ospfd, packet_buffer, rc_rd);
 
 	tx_prepare_ospf_std_header(ospfd, packet_buffer, rc_rd);
 
 	tx_prepare_ospf_hello_header(ospfd, packet_buffer, rc_rd);
+
+	/* the packet is completly constructed, time to set length fields
+	 * and recalculate the checksums */
+	tx_set_ospf_standard_header_length(packet_buffer, ip_hdr_len);
+
+#if 0
+	/* FIXME: there is a failure in the checksum calculation */
+	/* calculate fletscher checksum */
+	recalc_ospf_hdr_csum(packet_buffer);
+#endif
 
 	/* and set length of packet within the IPv4 header and recalculate
 	 * the IPv4 header checksum */

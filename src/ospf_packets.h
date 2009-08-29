@@ -56,13 +56,14 @@ struct hello_ipv4_std_header {
 	uint16_t checksum;
 
 	/* AuType and Authentication -- Each OSPF packet exchange is
-       authenticated.  Authentication types are assigned by the
+       authenticated. Authentication types are assigned by the
        protocol and are documented in Appendix D. A different
        authentication procedure can be used for each IP network/subnet.
        Autype indicates the type of authentication procedure in use.
        The 64-bit authentication field is then for use by the chosen
-       authentication procedure.  This procedure should be the last
-       called when forming the packet to be sent. See Section D.4 for details. */
+       authentication procedure. This procedure should be the last
+       called when forming the packet to be sent.
+	   See Section D.4 for details. */
 	uint16_t auth_type;
 	union
 	{
@@ -86,7 +87,6 @@ struct ipv4_hello_header {
 	uint32_t dead_interval;
 	struct in_addr d_router;
 	struct in_addr bd_router;
-	struct in_addr neighbors[1];
 };
 
 struct db_description

@@ -40,6 +40,6 @@ command: INTERFACE WORD SET AREA WORD    { rc_set_area($2, $5); }
     |    INTERFACE WORD SET HELLOINTERVAL WORD  { rc_set_hello_interval($2, $5);   }
     |    INTERFACE WORD UP               { rc_set_interface_up($2);   }
 		|    INTERFACE WORD SET ROUTERPRIORITY WORD  { rc_set_router_priority($2, $5); }
-    |    PREFIX EQUAL WORD               { rc_set_id($3); }
+    |    SET ROUTERID WORD               { rc_set_id($3); }
     ;
 

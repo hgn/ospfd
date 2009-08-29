@@ -284,7 +284,7 @@ uint16_t calc_fl_checksum(char *buf, uint16_t pos, uint16_t len)
 		c0 = x;
 	}
 
-	return htons((c0 << 8) | (c1 & 0xff1));
+	return htons((c0 << 8) | (c1 & 0xff));
 }
 
 
