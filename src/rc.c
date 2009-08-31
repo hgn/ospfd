@@ -17,6 +17,7 @@
 #include "nbr.h"
 
 extern FILE *yyin;
+int yyparse(void);
 
 int open_rc_file(const struct ospfd *ospfd)
 {
@@ -66,7 +67,9 @@ int parse_rc_file(struct ospfd *ospfd)
 	xospfd = ospfd;
 
 	/* and parse configuration file */
-	yyparse();
+	ret = yyparse();
+	if (ret == 1)
+		return FAILURE;
 
 	/* we set ospfd to NULL to detect any user that now does
 	 * derefernce xospfd, which can by not valid in any further

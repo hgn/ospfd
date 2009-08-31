@@ -1,8 +1,11 @@
+/* declarations */
 %{
 #include <stdio.h>
 #include <string.h>
 
 #include "rc.h"
+
+void yyerror(const char *);
 
 int yywrap(void)
 {
@@ -10,6 +13,8 @@ int yywrap(void)
 }
 
 %}
+
+
 
 %{
 int yylex(void);
@@ -25,7 +30,9 @@ int yylex(void);
 
 %token <word>  WORD
 
+/* rules */
 %%
+
 
 commands:
     |        commands command

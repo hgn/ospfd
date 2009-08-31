@@ -109,7 +109,7 @@ static void print_all_addresses(const void *data)
 	return;
 }
 
-static void print_all_interfaces(const void *data)
+void print_all_interfaces(const void *data)
 {
 	const struct rd *rd = (struct rd *) data;
 
