@@ -90,7 +90,7 @@ struct ip_addr {
  * to another area/whatever so all interfaces are available
  * via the struct rd. This routing domain reflect the dynamic
  * view of routing. Configuration parameters is saved within
- * struct rc_rd */
+ * struct interface_data */
 struct rd {
 	char if_name[IF_NAMESIZE];
 	unsigned int if_index;
@@ -193,11 +193,11 @@ enum {
 	INF_EV_INTERFACE_DOWN
 };
 
-/* forward declaration - see nbr.h */
+/* forward declaration - see interface.h */
 struct neighbor_router;
 
 /* Section 9. - The Interface Data Structure */
-struct rc_rd {
+struct interface_data {
 
 	/* The name of the interface, e.g. eth0, ... */
 	char if_name[IF_NAMESIZE];
@@ -287,19 +287,19 @@ struct ospfd {
 	struct opts opts;
 	struct network network;
 	struct ev ev;
-	struct list_e *rc_rd_list;
+	struct list_e *interface_data_list;
 };
 
 /* a wrapper struct to expand the limitation
    of one timer argument and introduce a wrapper
-   struct that contains the ospfd and the rc_rd
-   struct */
+   struct that contains the ospfd and the
+   interface_data struct */
 struct tx_hello_arg {
 	struct ospfd *ospfd;
-	/* rc_rd is a pointer to the actual
+	/* interface_data is a pointer to the actual
 	 * domain that should be processed by this
 	 * particular callback */
-	struct rc_rd *rc_rd;
+	struct interface_data *interface_data;
 };
 
 

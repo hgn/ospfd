@@ -4,27 +4,27 @@
 #include "shared.h"
 #include "hello.h"
 #include "timer.h"
-#include "nbr.h"
+#include "interface.h"
 
-struct rc_rd *alloc_rc_rd(void)
+struct interface_data *alloc_interface_data(void)
 {
-	struct rc_rd *rc_rd;
+	struct interface_data *interface_data;
 
-	rc_rd = xzalloc(sizeof(struct rc_rd));
+	interface_data = xzalloc(sizeof(struct interface_data));
 
 	/* set default values for the interface */
-	rc_rd->state                = INF_STATE_DOWN;
-	rc_rd->router_priority      = OSPF_DEFAULT_ROUTER_PRIORITY;
-	rc_rd->router_dead_interval = OSPF_DEFAULT_ROUTER_DEAD_INTERVAL;
+	interface_data->state                = INF_STATE_DOWN;
+	interface_data->router_priority      = OSPF_DEFAULT_ROUTER_PRIORITY;
+	interface_data->router_dead_interval = OSPF_DEFAULT_ROUTER_DEAD_INTERVAL;
 
 	/* initialize the list of (hopefully) upcoming neighbors
 	   for this interface */
-	rc_rd->neighbor_router_list = list_create();
+	interface_data->neighbor_router_list = list_create();
 
-	return rc_rd;
+	return interface_data;
 }
 
-static void s_down_rx_up(struct ospfd *ospfd, struct rc_rd *rc_rd)
+static void s_down_rx_up(struct ospfd *ospfd, struct interface_data *interface_data)
 {
 	int hello_start, ret;
 	struct tx_hello_arg *txha;
@@ -33,13 +33,13 @@ static void s_down_rx_up(struct ospfd *ospfd, struct rc_rd *rc_rd)
 	 * HELLO timer */
 	txha = xzalloc(sizeof(struct tx_hello_arg));
 	txha->ospfd = ospfd;
-	txha->rc_rd = rc_rd;
+	txha->interface_data = interface_data;
 
 	/* should we delay the first start a little bit? Is e.g. 1 second - a user
 	 * selected variable - to short after the daemon is "hopefully" good
 	 * natured startet. Should it code add a small offset? */
-	hello_start = rc_rd->hello_interval ?
-		rc_rd->hello_interval : OSPF_DEFAULT_HELLO_INTERVAL;
+	hello_start = interface_data->hello_interval ?
+		interface_data->hello_interval : OSPF_DEFAULT_HELLO_INTERVAL;
 
 	/* initialize timer for regular HELLO packet transmission */
 	ret = timer_add_s_rel(ospfd, hello_start, tx_ipv4_hello_packet, txha);
@@ -52,30 +52,30 @@ static void s_down_rx_up(struct ospfd *ospfd, struct rc_rd *rc_rd)
 }
 
 static void process_in_down(struct ospfd *ospfd,
-		struct rc_rd *rc_rd, int new_state)
+		struct interface_data *interface_data, int new_state)
 {
 	switch (new_state) {
 	case INF_EV_INTERFACE_UP:
-		s_down_rx_up(ospfd, rc_rd);
+		s_down_rx_up(ospfd, interface_data);
 		break;
 	default:
 		err_msg_die(EXIT_FAILURE, "Programmed error in switch/case statement: "
-			"state (%d) not known or not handled", rc_rd->state);
+			"state (%d) not known or not handled", interface_data->state);
 		abort();
 		break;
 	}
 }
 
 void nbr_set_state(struct ospfd *ospfd,
-		struct rc_rd *rc_rd, int new_state)
+		struct interface_data *interface_data, int new_state)
 {
-	switch (rc_rd->state) {
+	switch (interface_data->state) {
 	case INF_STATE_DOWN:
-		process_in_down(ospfd, rc_rd, new_state);
+		process_in_down(ospfd, interface_data, new_state);
 		break;
 	default:
 		err_msg_die(EXIT_FAILURE, "Programmed error in switch/case statement: "
-			"state (%d) not known or not handled", rc_rd->state);
+			"state (%d) not known or not handled", interface_data->state);
 		abort();
 		break;
 	}

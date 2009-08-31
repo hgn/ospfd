@@ -1,5 +1,5 @@
-#ifndef NBR_H
-#define NBR_H
+#ifndef INTERFACE_H
+#define INTERFACE_H
 
 #include "ospfd.h"
 
@@ -70,7 +70,7 @@ struct neighbor_router {
 	int neighbor_options;
 };
 
-void nbr_set_state(struct ospfd *ospfd, struct rc_rd *rc_rd, int new_state);
-struct rc_rd *alloc_rc_rd(void);
+void nbr_set_state(struct ospfd *ospfd, struct interface_data *interface_data, int new_state);
+struct interface_data *alloc_interface_data(void);
 
-#endif /* NBR_H */
+#endif /* INTERFACE_H */

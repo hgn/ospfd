@@ -14,7 +14,7 @@
 #include "ospfd.h"
 #include "shared.h"
 #include "rc.h"
-#include "nbr.h"
+#include "interface.h"
 
 extern FILE *yyin;
 int yyparse(void);
@@ -79,49 +79,49 @@ int parse_rc_file(struct ospfd *ospfd)
 	return SUCCESS;
 }
 
-static struct rc_rd *init_new_rc_rd(struct ospfd *ospfd, char *inf_name)
+static struct interface_data *init_new_interface_data(struct ospfd *ospfd, char *inf_name)
 {
-	struct rc_rd *rc_rd = alloc_rc_rd();
+	struct interface_data *interface_data = alloc_interface_data();
 
-	/* insert into global rc_rd list */
-	xospfd->rc_rd_list = list_insert_after(ospfd->rc_rd_list, rc_rd);
+	/* insert into global interface_data list */
+	xospfd->interface_data_list = list_insert_after(ospfd->interface_data_list, interface_data);
 
 	/* save interface name */
-	memcpy(rc_rd->if_name, inf_name,
-			min((strlen(inf_name) + 1), sizeof(rc_rd->if_name)));
+	memcpy(interface_data->if_name, inf_name,
+			min((strlen(inf_name) + 1), sizeof(interface_data->if_name)));
 
-	return rc_rd;
+	return interface_data;
 }
 
-static int search_rc_rd_for_interface(void *d1, void *d2)
+static int search_interface_data_for_interface(void *d1, void *d2)
 {
-	struct rc_rd *rc_rd = (struct rc_rd *) d1;
+	struct interface_data *interface_data = (struct interface_data *) d1;
 	char *if_name = (char *) d2;
 
-	return !strcmp(rc_rd->if_name, if_name);
+	return !strcmp(interface_data->if_name, if_name);
 }
 
-static struct rc_rd *get_rc_rd_by_interface(struct ospfd *ospfd, char *interface)
+static struct interface_data *get_interface_data_by_interface(struct ospfd *ospfd, char *interface)
 {
-	struct rc_rd *rc_rd;
+	struct interface_data *interface_data;
 	struct list_e *list;
 
-	list = list_search(ospfd->rc_rd_list, search_rc_rd_for_interface, interface);
+	list = list_search(ospfd->interface_data_list, search_interface_data_for_interface, interface);
 	if (list == NULL) {
-		rc_rd = init_new_rc_rd(xospfd, interface);
+		interface_data = init_new_interface_data(xospfd, interface);
 	} else {
-		rc_rd = list->data;
+		interface_data = list->data;
 	}
 
-	return rc_rd;
+	return interface_data;
 }
 
 void rc_set_area(char *interface, char *area)
 {
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
 	/* and save the value */
-	rc_rd->area_id = atoi(area);
+	interface_data->area_id = atoi(area);
 
 	/* allocated via lexer - can now be freed */
 	free(interface); free(area);
@@ -129,16 +129,16 @@ void rc_set_area(char *interface, char *area)
 
 void rc_set_costs(char *interface, char *costs)
 {
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
 	/* and save the value */
-	rc_rd->costs = atoi(costs);
+	interface_data->costs = atoi(costs);
 
 	/* 9. - The Interface Data Structure: The cost of an interface must
        be greater than zero. */
-	if (rc_rd->costs < 1) {
+	if (interface_data->costs < 1) {
 		msg(xospfd, DEBUG, "configured link costs are to small - adjust to 1");
-		rc_rd->costs = 1;
+		interface_data->costs = 1;
 	}
 
 	/* allocated via lexer - can be freed now */
@@ -148,20 +148,20 @@ void rc_set_costs(char *interface, char *costs)
 void rc_set_ipv4_address(char *interface, char *ip, char *netmask)
 {
 	int ret;
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
-	rc_rd->ip_addr.family = AF_INET;
-	ret = inet_pton(AF_INET, ip, &rc_rd->ip_addr.ipv4.addr);
+	interface_data->ip_addr.family = AF_INET;
+	ret = inet_pton(AF_INET, ip, &interface_data->ip_addr.ipv4.addr);
 	if (!ret) {
 		err_sys("Cannot convert ip address (%s) into internal in6_addr");
-		rc_rd->ip_addr.family = 0;
+		interface_data->ip_addr.family = 0;
 		return;
 	}
 
-	ret = inet_pton(AF_INET, netmask, &rc_rd->ip_addr.ipv4.netmask);
+	ret = inet_pton(AF_INET, netmask, &interface_data->ip_addr.ipv4.netmask);
 	if (!ret) {
 		err_sys("Cannot convert ip netmask (%s) into internal in6_addr");
-		rc_rd->ip_addr.family = 0;
+		interface_data->ip_addr.family = 0;
 		return;
 	}
 
@@ -171,10 +171,10 @@ void rc_set_ipv4_address(char *interface, char *ip, char *netmask)
 
 void rc_set_description(char *interface, char *description)
 {
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
-	memcpy(rc_rd->description, description,
-			min(strlen(description) + 1, sizeof(rc_rd->description)));
+	memcpy(interface_data->description, description,
+			min(strlen(description) + 1, sizeof(interface_data->description)));
 
 	/* allocated via lexer - can be freed now */
 	free(interface); free(description);
@@ -182,33 +182,33 @@ void rc_set_description(char *interface, char *description)
 
 void rc_set_hello_interval(char *interface, char *interval)
 {
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
-	rc_rd->hello_interval = atoi(interval);
+	interface_data->hello_interval = atoi(interval);
 
 	free(interface); free(interval);
 }
 
 void rc_show_interface(char *interface)
 {
-	struct rc_rd *rc_rd;
+	struct interface_data *interface_data;
 	struct list_e *list;
 	char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
 
-	list = list_search(xospfd->rc_rd_list, search_rc_rd_for_interface, interface);
+	list = list_search(xospfd->interface_data_list, search_interface_data_for_interface, interface);
 	if (list == NULL) {
 		fprintf(stderr, "Interface %s not konfigured!\n", interface);
 		return;
 	}
 
-	rc_rd = list->data;
+	interface_data = list->data;
 
-	switch (rc_rd->ip_addr.family) {
+	switch (interface_data->ip_addr.family) {
 		case AF_INET:
 			/* no error handling - this data structure is previously
 			 * created via inet_pton() - there should be no problems */
-			inet_ntop(AF_INET, &rc_rd->ip_addr.ipv4.addr, addr, INET6_ADDRSTRLEN);
-			inet_ntop(AF_INET, &rc_rd->ip_addr.ipv4.netmask, mask, INET6_ADDRSTRLEN);
+			inet_ntop(AF_INET, &interface_data->ip_addr.ipv4.addr, addr, INET6_ADDRSTRLEN);
+			inet_ntop(AF_INET, &interface_data->ip_addr.ipv4.netmask, mask, INET6_ADDRSTRLEN);
 			break;
 		case AF_INET6:
 		default:
@@ -216,7 +216,7 @@ void rc_show_interface(char *interface)
 	}
 
 	fprintf(stderr, "Interface: %s Area: %d Costs %d IP: %s Netmask %s\n",
-			rc_rd->if_name, rc_rd->area_id, rc_rd->costs, addr, mask);
+			interface_data->if_name, interface_data->area_id, interface_data->costs, addr, mask);
 
 	free(interface);
 }
@@ -229,9 +229,9 @@ void rc_set_id(char *id)
 
 void rc_set_interface_up(char *interface)
 {
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
-	nbr_set_state(xospfd, rc_rd, INF_EV_INTERFACE_UP);
+	nbr_set_state(xospfd, interface_data, INF_EV_INTERFACE_UP);
 
 	free(interface);
 }
@@ -239,7 +239,7 @@ void rc_set_interface_up(char *interface)
 void rc_set_router_priority(char *interface, char *router_priority)
 {
 	int val;
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
 	val = xatoi(router_priority);
 	if (val < 0) {
@@ -249,7 +249,7 @@ void rc_set_router_priority(char *interface, char *router_priority)
 		val = OSPF_DEFAULT_ROUTER_PRIORITY;
 	}
 
-	rc_rd->router_priority = val;
+	interface_data->router_priority = val;
 
 	free(interface); free(router_priority);
 }
@@ -257,7 +257,7 @@ void rc_set_router_priority(char *interface, char *router_priority)
 void rc_set_router_dead_interval(char *interface, char *router_dead_interval)
 {
 	int val;
-	struct rc_rd *rc_rd = get_rc_rd_by_interface(xospfd, interface);
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
 	val = xatoi(router_dead_interval);
 	if (val < 0) {
@@ -267,7 +267,7 @@ void rc_set_router_dead_interval(char *interface, char *router_dead_interval)
 		val = OSPF_DEFAULT_ROUTER_DEAD_INTERVAL;
 	}
 
-	rc_rd->router_dead_interval = val;
+	interface_data->router_dead_interval = val;
 
 	free(interface); free(router_dead_interval);
 }
