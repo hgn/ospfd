@@ -14,6 +14,7 @@ void rc_set_id(char *);
 void rc_set_interface_up(char *);
 void rc_set_router_priority(char *, char *);
 void rc_set_router_dead_interval(char *, char *);
+void rc_set_type(char *, char *);
 
 #endif /* RC_H */
 

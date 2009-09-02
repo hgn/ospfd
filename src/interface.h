@@ -3,7 +3,7 @@
 
 #include "ospfd.h"
 
-struct neighbor_router {
+struct neighbor {
 
 	/* State - the functional level of the neighbor
 	   conversation. This is described in more detail

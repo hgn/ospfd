@@ -195,8 +195,23 @@ enum {
 	INF_EV_INTERFACE_DOWN
 };
 
+enum {
+	INF_TYPE_UNKNOWN = 0,
+#define	INF_TYPE_UNKNOWN_STR "unknown"
+	INF_TYPE_BROADCAST,
+#define	INF_TYPE_BROADCAST_STR "broadcast"
+	INF_TYPE_PTP,
+#define	INF_TYPE_PTP_STR "ptp"
+	INF_TYPE_PTMP,
+#define	INF_TYPE_PTMP_STR "ptmp"
+	INF_TYPE_NBMA,
+#define	INF_TYPE_NBMA_STR "nbma"
+	INF_TYPE_VIRTUAL_LINK
+#define	INF_TYPE_VIRTUAL_LINK_STR "virtuallink"
+};
+
 /* forward declaration - see interface.h */
-struct neighbor_router;
+struct neighbor;
 
 /* Section 9. - The Interface Data Structure */
 struct interface_data {
@@ -208,6 +223,11 @@ struct interface_data {
        more usefull error/debug or status messages if
        several interfaces are available */
 	char description[MAX_LEN_DESCRIPTION];
+
+	/* type - the OSPF interface type is either
+       point-to-point, broadcast, NBMA, Point-to-MultiPoint
+	   or virtual link. */
+	int type;
 
 	/* State - The functional level of an interface. State
 	   determines whether or not full adjacencies are allowed
@@ -273,7 +293,8 @@ struct interface_data {
 	   this network. This list is formed by the Hello Protocol. Adjacencies
 	   will be formed to some of these neighbors. The set of adjacent neighbors
 	   can be determined by an examination of all of the neighbors' states. */
-	struct list_e *neighbor_router_list;
+	struct list_e *neighbor_list;
+
 };
 
 #define	EVENT_BACKING_STORE_HINT 64

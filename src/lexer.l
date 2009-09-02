@@ -33,6 +33,7 @@ hello-interval                   { return HELLOINTERVAL; }
 router-priority                  { return ROUTERPRIORITY; }
 router-dead-interval             { return ROUTERDEADINTERVAL; }
 up                               { return UP; }
+type                             { return TYPE; }
 [a-zA-Z0-9./][a-zA-Z0-9_./]*     { yylval.word = strdup(yytext); return WORD; }
 =                                { return EQUAL; }
 \n.*                             { strncpy(lexerrbuff, yytext + 1, MAXLEXERR - 1);

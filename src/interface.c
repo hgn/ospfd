@@ -16,10 +16,11 @@ struct interface_data *alloc_interface_data(void)
 	interface_data->state                = INF_STATE_DOWN;
 	interface_data->router_priority      = OSPF_DEFAULT_ROUTER_PRIORITY;
 	interface_data->router_dead_interval = OSPF_DEFAULT_ROUTER_DEAD_INTERVAL;
+	interface_data->type                 = INF_TYPE_UNKNOWN;
 
 	/* initialize the list of (hopefully) upcoming neighbors
 	   for this interface */
-	interface_data->neighbor_router_list = list_create();
+	interface_data->neighbor_list = list_create();
 
 	return interface_data;
 }

@@ -272,5 +272,30 @@ void rc_set_router_dead_interval(char *interface, char *router_dead_interval)
 	free(interface); free(router_dead_interval);
 }
 
+void rc_set_type(char *interface, char *type)
+{
+	int val = INF_TYPE_UNKNOWN;;
+	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
+
+	if (!strcmp(type, INF_TYPE_BROADCAST_STR)) {
+		val = INF_TYPE_BROADCAST;
+	} else if (!strcmp(type, INF_TYPE_PTP_STR)) {
+		val = INF_TYPE_PTP;
+	} else if (!strcmp(type, INF_TYPE_PTMP_STR)) {
+		val = INF_TYPE_PTMP;
+	} else if (!strcmp(type, INF_TYPE_NBMA_STR)) {
+		val = INF_TYPE_NBMA;
+	} else if (!strcmp(type, INF_TYPE_VIRTUAL_LINK_STR)) {
+		val = INF_TYPE_VIRTUAL_LINK;
+	} else {
+		msg(xospfd, GENTLE, "router interface type (%s) not supportet - Fall back to broadcast!",
+				type);
+		val = INF_TYPE_BROADCAST;
+	}
+
+	interface_data->type = val;
+
+	free(interface); free(type);
+}
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */
