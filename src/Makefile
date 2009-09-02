@@ -1,11 +1,12 @@
 OBJ=buf.o        \
 		shared.o     \
 		network.o    \
-		rx.o \
+		rx.o         \
 		rbtree.o     \
 		timer.o      \
 		event.o      \
 		hello_tx.o   \
+		hello_rx.o   \
 		cli_opt.o    \
 		parser.tab.o \
 		lex.yy.o     \

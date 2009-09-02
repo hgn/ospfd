@@ -77,7 +77,7 @@ static size_t tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 	ip.version  = 4;
 	ip.ihl      = sizeof(struct iphdr) >> 2;
 	ip.tos      = 0x0;
-	ip.id       = htons(getpid() & 0xFFFF);
+	ip.id       = htons(getpid() & 0xFFFF); /* TODO: replace with get_random_byte() */
 	ip.frag_off = 0x0;
 	ip.ttl      = 2;
 	ip.protocol = IPPROTO_OSPF;
