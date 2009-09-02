@@ -12,7 +12,7 @@
 #include "buf.h"
 #include "event.h"
 #include "timer.h"
-#include "hello.h"
+#include "hello_tx.h"
 
 #define	DEFAULT_MTU_SIZE 1500
 

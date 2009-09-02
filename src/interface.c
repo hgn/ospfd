@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "shared.h"
-#include "hello.h"
+#include "hello_tx.h"
 #include "timer.h"
 #include "interface.h"
 

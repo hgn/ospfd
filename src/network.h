@@ -23,7 +23,7 @@ int init_network(struct ospfd *);
 void fini_network(struct ospfd *);
 uint16_t calc_fl_checksum(char *, uint16_t, uint16_t);
 
-/* ipv4_input.c */
+/* rx.c */
 int ipv4_input(const char *);
 void packet_input(int, void *);
 
