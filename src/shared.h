@@ -41,6 +41,7 @@ unsigned long long xstrtoull(const char *);
 int xatoi(const char *);
 void *get_in_addr(struct sockaddr *);
 void msg(struct ospfd *, const int , const char *, ...);
+void init_pnrg(struct ospfd *);
 
 #endif /* SHARED_H */
 

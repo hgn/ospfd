@@ -47,6 +47,9 @@ int main(int ac, char **av)
 
 	msg(ospfd, GENTLE, PROGRAMNAME " - " VERSIONSTRING);
 
+	/* seed pseudo number randon generator */
+	init_pnrg(ospfd);
+
 	/* initialize event subsystem. In this case this belongs
 	 * to open a epoll filedescriptor */
 	ret = ev_init(ospfd);
@@ -64,7 +67,7 @@ int main(int ac, char **av)
 		err_msg_die(EXIT_FAILURE, "Can't initialize network subsystem");
 
 	/* and branch into the main loop
-	 * This loop will return (with the exception of SIGINT or failure
+	 * This loop will never return (with the exception of SIGINT or failure
 	 * condition) */
 	ret = ev_loop(ospfd);
 	if (ret != SUCCESS)

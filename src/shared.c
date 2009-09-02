@@ -4,6 +4,10 @@
 #include <stdarg.h>
 #include <string.h>
 #include <limits.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <time.h>
 
 #include "shared.h"
 
@@ -181,6 +185,27 @@ get_in_addr(struct sockaddr *sa)
 			err_msg_die(EXIT_FAILURE, "Unsupportet protocol");
 			return NULL;
 	};
+}
+
+void init_pnrg(struct ospfd *ospfd)
+{
+	int fd;
+	const char *crypt_device;
+	unsigned int seed;
+
+	msg(ospfd, VERBOSE, "intialize pseudo random number generator seed");
+
+	/* set seed */
+	crypt_device = SEED_DEVICE;
+	if ( (fd = open(crypt_device, O_RDONLY)) < 0 ) {
+		seed = (unsigned int) time(NULL) ^ getpid();
+	} else {
+		if ( (read(fd, &seed, sizeof(seed))) < (int)sizeof(seed)) {
+			seed = (unsigned long) time(NULL) ^ getpid();
+		}
+	}
+
+	srandom(seed);
 }
 
 /* vim:set ts=4 sw=4 sts=4 tw=78 ff=unix noet: */

@@ -26,6 +26,8 @@
 #define	PROGRAMNAME   "ospfd"
 #define	VERSIONSTRING "0.0.1"
 
+#define	SEED_DEVICE "/dev/urandom"
+
 /* function return codes */
 #define SUCCESS 0
 #define FAILURE -1
