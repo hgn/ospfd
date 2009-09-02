@@ -42,6 +42,7 @@ int xatoi(const char *);
 void *get_in_addr(struct sockaddr *);
 void msg(struct ospfd *, const int , const char *, ...);
 void init_pnrg(struct ospfd *);
+void get_random_bytes(char *, size_t);
 
 #endif /* SHARED_H */
 

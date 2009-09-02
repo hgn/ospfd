@@ -208,4 +208,16 @@ void init_pnrg(struct ospfd *ospfd)
 	srandom(seed);
 }
 
+void get_random_bytes(char *data, size_t len)
+{
+	size_t i;
+
+	if (len == 0 || data == NULL)
+		return;
+
+	for (i = 0; i < len; i++) {
+		data[i] = (char) random();
+	}
+}
+
 /* vim:set ts=4 sw=4 sts=4 tw=78 ff=unix noet: */
