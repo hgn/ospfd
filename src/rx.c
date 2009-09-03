@@ -15,19 +15,19 @@
 #define	MAX_PACKET_SIZE 4096
 
 
-static int multiplex_ospf_packet(struct ospfd *ospfd,
-		char *packet, ssize_t packet_len)
+static int multiplex_ospf_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 {
-	const struct hello_ipv4_std_header *hdr;
+	unsigned ospfd_packet_len;
+	const struct hello_ipv4_std_header *hdr = o_buf->ospf_hdr.ospf_v4_hdr;
 
+	ospfd_packet_len = o_buf->len - o_buf->inet_hdr_len;
 
-	hdr = (struct hello_ipv4_std_header *)packet;
 
 	/* first of all: vality checks */
-	if (sizeof(struct hello_ipv4_std_header) > (size_t) packet_len) {
+	if (sizeof(struct hello_ipv4_std_header) > (size_t) ospfd_packet_len) {
 		msg(ospfd, VERBOSE, "incoming packet is to small to contain a valid OSPF header"
 				"is: %d must: %d (or bigger)",
-				sizeof(struct hello_ipv4_std_header), packet_len);
+				sizeof(struct hello_ipv4_std_header), ospfd_packet_len);
 		return FAILURE;
 	}
 
@@ -41,7 +41,7 @@ static int multiplex_ospf_packet(struct ospfd *ospfd,
 
 	switch (hdr->type) {
 		case MSG_TYPE_HELLO:
-			return hello_ipv4_in(ospfd, packet, packet_len);
+			return hello_ipv4_in(ospfd, o_buf);
 			break;
 		case MSG_TYPE_DATABASE_DESCRIPTION:
 		case MSG_TYPE_LINK_STATE_REQUEST:
@@ -60,11 +60,10 @@ static int multiplex_ospf_packet(struct ospfd *ospfd,
 }
 
 
-static int multiplex_ipv4_packet(struct ospfd *ospfd,
-		char *packet, ssize_t packet_len)
+static int multiplex_ipv4_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 {
 	int ip_offset;
-	const struct iphdr *iphdr = (struct iphdr *) packet;
+	const struct iphdr *iphdr = (struct iphdr *) o_buf->data;
 
 	msg(ospfd, DEBUG, "handle incoming IPv4 packet");
 
@@ -74,9 +73,13 @@ static int multiplex_ipv4_packet(struct ospfd *ospfd,
 	/* find IP data offset - skip whole IPv4 header including
 	 * all IP header options */
 	ip_offset = iphdr->ihl * 4;
+	o_buf->inet_hdr_len = ip_offset;
 
-	if (iphdr->protocol == IPPROTO_OSPF)
-		return multiplex_ospf_packet(ospfd, packet + ip_offset, packet_len - ip_offset);
+	if (iphdr->protocol == IPPROTO_OSPF) {
+		o_buf->ospf_hdr.ospf_v4_hdr =
+			(struct hello_ipv4_std_header *) (o_buf->data + ip_offset);
+		return multiplex_ospf_packet(ospfd, o_buf);
+	}
 
 
 	msg(ospfd, DEBUG, "incoming IPv4 packet not handled! Expected OSPF packet (%d) "
@@ -86,21 +89,18 @@ static int multiplex_ipv4_packet(struct ospfd *ospfd,
 }
 
 
-static int multiplex_ipv6_packet(struct ospfd *ospfd,
-		char *packet, ssize_t packet_len)
+static int multiplex_ipv6_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 {
 	msg(ospfd, VERBOSE, "incoming IPv6 packet not handled, "
 			"IPv6 support is still missing\n");
 
-	(void) packet;
-	(void) packet_len;
+	(void) o_buf;
 
 	return FAILURE;
 }
 
 
-static int multiplex_ip_packet(struct ospfd *ospfd,
-		char *packet, ssize_t packet_len)
+static int multiplex_ip_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 {
 	struct iphdr *iphdr;
 	/* some dump sanity checks */
@@ -109,9 +109,9 @@ static int multiplex_ip_packet(struct ospfd *ospfd,
 	int min_len = sizeof(struct iphdr) + sizeof(struct hello_ipv4_std_header) +
 		min(sizeof (struct ipv4_hello_header), sizeof(struct ipv4_hello_header));
 
-	if (packet_len < min_len) {
+	if (o_buf->len < min_len) {
 		msg(ospfd, DEBUG, "incoming packet to small (is: %d must: %d)",
-				packet_len, min_len);
+				o_buf->len, min_len);
 		return FAILURE;
 	}
 
@@ -119,14 +119,14 @@ static int multiplex_ip_packet(struct ospfd *ospfd,
 	 * ipv4 header struct is used - the only required field
 	 * is the ip version field and this field is identical in
 	 * all protocol version   --HGN */
-	iphdr = (struct iphdr *)packet;
+	iphdr = (struct iphdr *)o_buf->data;
 
 	switch (iphdr->version) {
 		case 4:
-			return multiplex_ipv4_packet(ospfd, packet, packet_len);
+			return multiplex_ipv4_packet(ospfd, o_buf);
 			break;
 		case 6:
-			return multiplex_ipv6_packet(ospfd, packet, packet_len);
+			return multiplex_ipv6_packet(ospfd, o_buf);
 			break;
 		default:
 			msg(ospfd, DEBUG, "no valid IPv4 or IPv6 packet - "
@@ -210,7 +210,7 @@ void packet_input(int fd, void *priv_data)
 		ospfd->network.stats.packets_rx++;
 		/* try to guess if raw_packet_buf is ipv4 or ipv6 and has a valid
 		 * OSPF header */
-		ret = multiplex_ip_packet(ospfd, raw_packet_buf, o_buf.len);
+		ret = multiplex_ip_packet(ospfd, &o_buf);
 		if (ret != SUCCESS) {
 			msg(ospfd, DEBUG, "cannot multiplex incoming packet");
 			return;

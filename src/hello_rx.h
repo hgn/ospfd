@@ -4,9 +4,10 @@
 #include <inttypes.h>
 
 #include "ospfd.h"
+#include "network.h"
 #include "ospf_packets.h"
 
-int hello_ipv4_in(struct ospfd *, char *, ssize_t);
+int hello_ipv4_in(struct ospfd *, struct o_buf *);
 
 
 #endif /* HELLO_RX_H */

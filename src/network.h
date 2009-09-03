@@ -28,6 +28,15 @@ struct o_buf {
 	char *data;
 	ssize_t len;
 
+	union {
+		struct iphdr *iphdr;
+	} inet_hdr;
+	ssize_t inet_hdr_len;
+
+	union {
+		struct hello_ipv4_std_header *ospf_v4_hdr;
+	} ospf_hdr;
+
 	unsigned int ifindex;
 };
 
