@@ -14,6 +14,7 @@
 
 #define	MAX_PACKET_SIZE 4096
 
+
 static int multiplex_ospf_packet(struct ospfd *ospfd,
 		char *packet, ssize_t packet_len)
 {
@@ -43,12 +44,11 @@ static int multiplex_ospf_packet(struct ospfd *ospfd,
 			return hello_ipv4_in(ospfd, packet, packet_len);
 			break;
 		case MSG_TYPE_DATABASE_DESCRIPTION:
-			break;
 		case MSG_TYPE_LINK_STATE_REQUEST:
-			break;
 		case MSG_TYPE_LINK_STATE_UPDATE:
-			break;
 		case MSG_TYPE_LINK_STATE_ACK:
+			msg(ospfd, VERBOSE, "OSPF packet type not handled!",
+					hdr->type);
 			break;
 		default:
 			msg(ospfd, VERBOSE, "incoming packet has no valid OSPF type: %d",
@@ -58,6 +58,7 @@ static int multiplex_ospf_packet(struct ospfd *ospfd,
 
 	return FAILURE;
 }
+
 
 static int multiplex_ipv4_packet(struct ospfd *ospfd,
 		char *packet, ssize_t packet_len)
@@ -84,6 +85,7 @@ static int multiplex_ipv4_packet(struct ospfd *ospfd,
 	return FAILURE;
 }
 
+
 static int multiplex_ipv6_packet(struct ospfd *ospfd,
 		char *packet, ssize_t packet_len)
 {
@@ -95,6 +97,7 @@ static int multiplex_ipv6_packet(struct ospfd *ospfd,
 
 	return FAILURE;
 }
+
 
 static int multiplex_ip_packet(struct ospfd *ospfd,
 		char *packet, ssize_t packet_len)
@@ -135,27 +138,86 @@ static int multiplex_ip_packet(struct ospfd *ospfd,
 	return FAILURE;
 }
 
+
+static void save_msghdr_infos(struct o_buf *o_buf, struct msghdr *msghdr)
+{
+	struct cmsghdr *cmsgptr;
+
+	for (cmsgptr = CMSG_FIRSTHDR(msghdr);
+			cmsgptr != NULL;
+			cmsgptr = CMSG_NXTHDR(msghdr, cmsgptr)) {
+
+		if (cmsgptr->cmsg_len == 0)
+			continue;
+
+		if (cmsgptr->cmsg_level == SOL_IPV6 && cmsgptr->cmsg_type == IPV6_PKTINFO) {
+			struct in6_pktinfo *pktinfo;
+			pktinfo = (struct in6_pktinfo*)CMSG_DATA(cmsgptr);
+
+			/* FIXME: the following line throws a compile time
+			 * error for invalid derefernces of pktinfo - wtf? */
+			/* o_buf->ifindex = pktinfo->ipi6_ifindex; */
+		}
+
+		if (cmsgptr->cmsg_level == SOL_IP && cmsgptr->cmsg_type == IP_PKTINFO) {
+			struct in_pktinfo *pktinfo;
+			pktinfo = (struct in_pktinfo*)CMSG_DATA(cmsgptr);
+
+			o_buf->ifindex = pktinfo->ipi_ifindex;
+		}
+	}
+}
+
+
 /* called from event mechanism if socket
  * status changes - normally to readable state */
 void packet_input(int fd, void *priv_data)
 {
-	ssize_t pret; int ret;
+	int ret;
 	struct ospfd *ospfd;
-	char packet[MAX_PACKET_SIZE];
+	struct o_buf o_buf;
+	char raw_packet_buf[MAX_PACKET_SIZE];
 
 	ospfd = priv_data;
 
-	while ((pret = read(fd, packet, MAX_PACKET_SIZE)) > 0) {
+	init_o_buf(&o_buf);
+
+	o_buf.data = raw_packet_buf;
+
+	struct iovec iov;
+	struct msghdr msghdr;
+	char ancillary[64];
+	union {
+		struct sockaddr_in in4;
+		struct sockaddr_in6 in6;
+	} addr_src;
+
+	msghdr.msg_name = &addr_src;
+	msghdr.msg_namelen = sizeof(addr_src);
+	iov.iov_base = raw_packet_buf;
+	iov.iov_len = sizeof(raw_packet_buf);
+
+	msghdr.msg_iov = &iov;
+	msghdr.msg_iovlen = 1;
+	msghdr.msg_control = ancillary;
+	msghdr.msg_controllen = sizeof(ancillary);
+	msghdr.msg_flags = 0;
+
+	while ((o_buf.len = recvmsg(fd, &msghdr, 0)) > 0) {
+
+		save_msghdr_infos(&o_buf, &msghdr);
 
 		ospfd->network.stats.packets_rx++;
-		/* try to guess if packet is ipv4 or ipv6 and has a valid
+		/* try to guess if raw_packet_buf is ipv4 or ipv6 and has a valid
 		 * OSPF header */
-		ret = multiplex_ip_packet(ospfd, packet, pret);
+		ret = multiplex_ip_packet(ospfd, raw_packet_buf, o_buf.len);
 		if (ret != SUCCESS) {
-			msg(ospfd, DEBUG, "cannot multiplex packet");
+			msg(ospfd, DEBUG, "cannot multiplex incoming packet");
 			return;
 		}
 	}
+
+
 	if (ret < 0 && errno != EWOULDBLOCK) {
 		err_sys("failure in read(2) operation for raw socket");
 		return;

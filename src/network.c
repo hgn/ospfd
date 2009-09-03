@@ -337,5 +337,11 @@ void fini_network(struct ospfd *ospfd)
 	 * morning already -- some hours and my work starts ;-) */
 }
 
+void init_o_buf(struct o_buf *o_buf)
+{
+	memset(o_buf, 0, sizeof(struct o_buf));
+
+	o_buf->ifindex = O_BUF_INF_UNKOWN;
+}
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */
