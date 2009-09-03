@@ -11,11 +11,22 @@
 #include "event.h"
 #include "timer.h"
 #include "hello_rx.h"
+#include "interface.h"
 
 int hello_ipv4_in(struct ospfd *ospfd, struct o_buf *o_buf)
 {
-	(void) ospfd;
-	(void) o_buf;
+	struct interface_data *inf_data;
+
+	/* get the right interface structure for the current
+	 * incoming packet */
+	inf_data = interface_data_for_index(ospfd, o_buf->ifindex);
+	if (!inf_data) {
+		msg(ospfd, VERBOSE, "Cannot determine interface data for incoming HELLO packet."
+				" This probably means that this interface was not configured for routing but "
+				" one peer node on the other end of this interface transmitted a HELLO packet");
+		return FAILURE;
+	}
+
 
 	return SUCCESS;
 }

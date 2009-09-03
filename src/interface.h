@@ -72,5 +72,7 @@ struct neighbor {
 
 void nbr_set_state(struct ospfd *ospfd, struct interface_data *interface_data, int new_state);
 struct interface_data *alloc_interface_data(void);
+int interface_data_name_cmp(void *, void *);
+struct interface_data *interface_data_for_index(const struct ospfd *, unsigned int);
 
 #endif /* INTERFACE_H */

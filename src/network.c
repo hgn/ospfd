@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <net/if.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,6 +14,7 @@
 #include "network.h"
 #include "shared.h"
 #include "event.h"
+#include "interface.h"
 
 static int join_router_4_multicast(int fd)
 {
@@ -119,6 +121,7 @@ void print_all_interfaces(const void *data)
 
 	return;
 }
+
 
 static int ifname_cmp(void *d1, void *d2)
 {
@@ -343,5 +346,6 @@ void init_o_buf(struct o_buf *o_buf)
 
 	o_buf->ifindex = O_BUF_INF_UNKOWN;
 }
+
 
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */
