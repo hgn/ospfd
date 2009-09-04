@@ -41,7 +41,7 @@ struct neighbor {
 	   The Neighbor ID is learned when Hello packets are received from
 	   the neighbor, or is configured if this is a virtual adjacency
 	   (see Section C.4). */
-	int neighbor_id;
+	uint32_t neighbor_id;
 
 	/* Neighbor Priority -- the Router Priority of the neighboring router.
 	   Contained in the neighbor's Hello packets, this item is used when
@@ -70,9 +70,10 @@ struct neighbor {
 	int neighbor_options;
 };
 
-void nbr_set_state(struct ospfd *ospfd, struct interface_data *interface_data, int new_state);
+void interface_set_state(struct ospfd *ospfd, struct interface_data *interface_data, int new_state);
 struct interface_data *alloc_interface_data(void);
 int interface_data_name_cmp(void *, void *);
 struct interface_data *interface_data_for_index(const struct ospfd *, unsigned int);
+struct neighbor *neighbor_by_id(struct ospfd *, struct interface_data *, uint32_t);
 
 #endif /* INTERFACE_H */

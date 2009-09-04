@@ -231,7 +231,7 @@ void rc_set_interface_up(char *interface)
 {
 	struct interface_data *interface_data = get_interface_data_by_interface(xospfd, interface);
 
-	nbr_set_state(xospfd, interface_data, INF_EV_INTERFACE_UP);
+	interface_set_state(xospfd, interface_data, INF_EV_INTERFACE_UP);
 
 	free(interface);
 }
