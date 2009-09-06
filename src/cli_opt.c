@@ -14,12 +14,23 @@ static void set_default_options(struct opts *opts)
 {
 	opts->family        = AF_INET;
 	opts->verbose_level = GENTLE;
+	opts->rc_path       = NULL;
+}
+
+void free_options(struct ospfd *ospfd)
+{
+	struct opts *opts = &ospfd->opts;
+
+	if (opts->rc_path)
+		free(opts->rc_path);
+
+	free(opts->me);
 }
 
 int parse_cli_options(struct ospfd *ospfd, int ac, char **av)
 {
 	int ret = SUCCESS, c;
-	struct opts *opts = &ospfd->opts;;
+	struct opts *opts = &ospfd->opts;
 
 	set_default_options(opts);
 

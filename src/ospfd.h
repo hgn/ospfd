@@ -335,6 +335,7 @@ struct ev_data {
 
 /* cli_opt.c */
 int parse_cli_options(struct ospfd *, int, char **);
+void free_options(struct ospfd *);
 
 
 #endif /* OSPFD */

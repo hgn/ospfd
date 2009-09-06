@@ -75,6 +75,7 @@ int main(int ac, char **av)
 
 
 	fini_network(ospfd);
+	free_options(ospfd);
 	free_ospfd(ospfd);
 
 	return EXIT_SUCCESS;
