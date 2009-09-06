@@ -215,8 +215,10 @@ void rc_show_interface(char *interface)
 			err_msg_die(EXIT_FAILURE, "Programmed error - protocol not supported");
 	}
 
+#if 0
 	fprintf(stderr, "Interface: %s Area: %d Costs %d IP: %s Netmask %s\n",
 			interface_data->if_name, interface_data->area_id, interface_data->costs, addr, mask);
+#endif
 
 	free(interface);
 }

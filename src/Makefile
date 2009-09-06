@@ -13,6 +13,7 @@ OBJ=buf.o        \
 		rc.o         \
 		clist.o      \
 		interface.o  \
+		neighbor.o   \
 		ospfd.o
 
 TARGET=ospfd

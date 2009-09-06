@@ -325,6 +325,13 @@ struct tx_hello_arg {
 	struct interface_data *interface_data;
 };
 
+struct ev_data {
+	int fd;
+	void (*cb)(int, void *);
+	void *data;
+	uint32_t flags;
+};
+
 
 /* cli_opt.c */
 int parse_cli_options(struct ospfd *, int, char **);

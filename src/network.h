@@ -34,8 +34,12 @@ struct o_buf {
 	ssize_t inet_hdr_len;
 
 	union {
-		struct hello_ipv4_std_header *ospf_v4_hdr;
+		struct ipv4_ospf_header *ipv4_ospf_header;
 	} ospf_hdr;
+
+	union {
+		struct ipv4_hello_header *ipv4_hello_header;
+	} data_hdr;
 
 	unsigned int ifindex;
 };

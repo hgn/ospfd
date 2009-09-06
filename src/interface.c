@@ -114,25 +114,4 @@ void interface_set_state(struct ospfd *ospfd,
 }
 
 
-static int neighbor_id_cmp(void *a, void *b)
-{
-	struct neighbor *n = (struct neighbor *)a;
-	uint32_t *id = b;
-
-	return n->neighbor_id == *id;
-}
-
-
-struct neighbor *neighbor_by_id(struct ospfd *ospfd,
-		struct interface_data *interface_data, uint32_t neighbor_id)
-{
-	struct list_e *list;
-	(void) ospfd;
-
-	list = list_search(interface_data->neighbor_list,
-			neighbor_id_cmp, &neighbor_id);
-
-	return list ? list->data : NULL;
-}
-
 /* vim: set tw=78 ts=4 sw=4 sts=4 ff=unix noet: */

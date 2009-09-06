@@ -11,13 +11,6 @@
 #include "event.h"
 #include "shared.h"
 
-struct ev_data {
-	int fd;
-	void (*cb)(int, void *);
-	void *data;
-	uint32_t flags;
-};
-
 int ev_init(struct ospfd *ospfd)
 {
 	ospfd->ev.fd = epoll_create(EVENT_BACKING_STORE_HINT);
@@ -48,6 +41,38 @@ int ev_del(struct ospfd *ospfd, int fd)
 
 	return SUCCESS;
 }
+
+int ev_add_sovereignty(struct ospfd *ospfd, int fd,
+		void (*cb)(int fd, void *data), void *data, uint32_t flags, struct ev_data **allocated_ptr)
+{
+	int ret = SUCCESS;
+	struct ev_data *evd;
+	struct epoll_event ev;
+
+	evd = xzalloc(sizeof(struct ev_data));
+
+	evd->fd    = fd;
+	evd->cb    = cb;
+	evd->data  = data;
+	evd->flags = EVENT_USER_SOVEREIGNTY;
+
+	*allocated_ptr = evd;
+
+	/* fill event structure */
+	ev.events   = flags;
+	ev.data.ptr = evd;
+
+	ret = epoll_ctl(ospfd->ev.fd, EPOLL_CTL_ADD, fd, &ev);
+	if (ret < 0) {
+		err_sys("failed to add filedescriptor to epolls event pool");
+		return FAILURE;
+	}
+
+	ospfd->ev.size++;
+
+	return ret;
+}
+
 
 int ev_add(struct ospfd *ospfd, int fd,
 		void (*cb)(int fd, void *data), void *data, uint32_t flags, int32_t event_flags)

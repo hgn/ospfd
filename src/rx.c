@@ -18,16 +18,16 @@
 static int multiplex_ospf_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 {
 	unsigned ospfd_packet_len;
-	const struct hello_ipv4_std_header *hdr = o_buf->ospf_hdr.ospf_v4_hdr;
+	struct ipv4_ospf_header *hdr = o_buf->ospf_hdr.ipv4_ospf_header;
 
 	ospfd_packet_len = o_buf->len - o_buf->inet_hdr_len;
 
 
 	/* first of all: vality checks */
-	if (sizeof(struct hello_ipv4_std_header) > (size_t) ospfd_packet_len) {
+	if (sizeof(struct ipv4_ospf_header) > (size_t) ospfd_packet_len) {
 		msg(ospfd, VERBOSE, "incoming packet is to small to contain a valid OSPF header"
 				"is: %d must: %d (or bigger)",
-				sizeof(struct hello_ipv4_std_header), ospfd_packet_len);
+				sizeof(struct ipv4_ospf_header), ospfd_packet_len);
 		return FAILURE;
 	}
 
@@ -41,6 +41,10 @@ static int multiplex_ospf_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 
 	switch (hdr->type) {
 		case MSG_TYPE_HELLO:
+			/* set pointer of HELLO header */
+			o_buf->data_hdr.ipv4_hello_header =
+				(struct ipv4_hello_header *) o_buf->ospf_hdr.ipv4_ospf_header +
+				sizeof(struct ipv4_ospf_header);
 			return hello_ipv4_in(ospfd, o_buf);
 			break;
 		case MSG_TYPE_DATABASE_DESCRIPTION:
@@ -76,8 +80,8 @@ static int multiplex_ipv4_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 	o_buf->inet_hdr_len = ip_offset;
 
 	if (iphdr->protocol == IPPROTO_OSPF) {
-		o_buf->ospf_hdr.ospf_v4_hdr =
-			(struct hello_ipv4_std_header *) (o_buf->data + ip_offset);
+		o_buf->ospf_hdr.ipv4_ospf_header =
+			(struct ipv4_ospf_header *) (o_buf->data + ip_offset);
 		return multiplex_ospf_packet(ospfd, o_buf);
 	}
 
@@ -106,7 +110,7 @@ static int multiplex_ip_packet(struct ospfd *ospfd, struct o_buf *o_buf)
 	/* some dump sanity checks */
 
 	/* additional OSPF header should be added here */
-	int min_len = sizeof(struct iphdr) + sizeof(struct hello_ipv4_std_header) +
+	int min_len = sizeof(struct iphdr) + sizeof(struct ipv4_ospf_header) +
 		min(sizeof (struct ipv4_hello_header), sizeof(struct ipv4_hello_header));
 
 	if (o_buf->len < min_len) {

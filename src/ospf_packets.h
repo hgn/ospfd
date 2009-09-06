@@ -26,7 +26,7 @@
 #define	AUTH_TYPE_NULL 0
 
 /* 8.1.  Sending protocol packets */
-struct hello_ipv4_std_header {
+struct ipv4_ospf_header {
 
 	/* Version -- set to 2, the version number of the protocol as
 	   documented in this specification. */

@@ -3,6 +3,13 @@
 
 #include "ospfd.h"
 
+#define	NEIGHBOR_INACTIVE_TIMER_DISABLED INT32_MIN
+
+struct inactivity_timer_data {
+	struct ospfd *ospfd;
+	struct neighbor *neighbor;
+};
+
 struct neighbor {
 
 	/* State - the functional level of the neighbor
@@ -15,6 +22,8 @@ struct neighbor {
 	   this neighbor recently. The length of the timer is
 	   RouterDeadInterval seconds. */
 	int inactive_timer;
+	struct inactivity_timer_data *inactivity_timer_data;
+	struct ev_data *timer_priv_data;
 
 	/* Master/Slave - When the two neighbors are exchanging
 	   databases, they form a master/slave relationship.
@@ -74,6 +83,5 @@ void interface_set_state(struct ospfd *ospfd, struct interface_data *interface_d
 struct interface_data *alloc_interface_data(void);
 int interface_data_name_cmp(void *, void *);
 struct interface_data *interface_data_for_index(const struct ospfd *, unsigned int);
-struct neighbor *neighbor_by_id(struct ospfd *, struct interface_data *, uint32_t);
 
 #endif /* INTERFACE_H */

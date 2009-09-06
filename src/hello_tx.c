@@ -95,11 +95,11 @@ static size_t tx_prepare_ipv4_std_header(struct ospfd *ospfd,
 static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
 		struct buf *packet_buffer, struct interface_data *interface_data)
 {
-	struct hello_ipv4_std_header std_hdr;
+	struct ipv4_ospf_header std_hdr;
 
 	(void) ospfd;
 
-	memset(&std_hdr, 0, sizeof(struct hello_ipv4_std_header));
+	memset(&std_hdr, 0, sizeof(struct ipv4_ospf_header));
 
 	std_hdr.version   = OSPF2_VERSION;
 	std_hdr.type      = MSG_TYPE_HELLO;
@@ -110,7 +110,7 @@ static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
 	std_hdr.checksum  = 0; /* also adjusted later */
 	std_hdr.auth_type = AUTH_TYPE_NULL;
 
-	buf_add(packet_buffer, (char *) &std_hdr, sizeof(struct hello_ipv4_std_header));
+	buf_add(packet_buffer, (char *) &std_hdr, sizeof(struct ipv4_ospf_header));
 
 	return SUCCESS;
 }
@@ -139,7 +139,7 @@ static uint8_t get_hello_options(struct ospfd *ospfd, struct interface_data *int
 
 static void recalc_ospf_hdr_csum(struct buf *packet_buffer)
 {
-	struct hello_ipv4_std_header *h = buf_addr(packet_buffer) +
+	struct ipv4_ospf_header *h = buf_addr(packet_buffer) +
 		sizeof(struct iphdr);
 
 	h->checksum = calc_fl_checksum((char *)h,
@@ -150,7 +150,7 @@ static void recalc_ospf_hdr_csum(struct buf *packet_buffer)
 
 static void tx_set_ospf_standard_header_length(struct buf *packet_buffer, size_t ip_hdr_len)
 {
-	struct hello_ipv4_std_header *std_hdr = buf_addr(packet_buffer) + ip_hdr_len;
+	struct ipv4_ospf_header *std_hdr = buf_addr(packet_buffer) + ip_hdr_len;
 
 	std_hdr->length = htons(buf_len(packet_buffer) - ip_hdr_len);
 }
@@ -162,7 +162,7 @@ static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 
 	(void) ospfd;
 
-	memset(&hello_hdr, 0, sizeof(struct hello_ipv4_std_header));
+	memset(&hello_hdr, 0, sizeof(struct ipv4_ospf_header));
 
 	hello_hdr.network_mask.s_addr = interface_data->ip_addr.ipv4.netmask.s_addr;
 
@@ -179,7 +179,7 @@ static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 
 	hello_hdr.dead_interval = htonl(interface_data->router_dead_interval);
 
-	buf_add(packet_buffer, (char *) &hello_hdr, sizeof(struct hello_ipv4_std_header));
+	buf_add(packet_buffer, (char *) &hello_hdr, sizeof(struct ipv4_ospf_header));
 
 	return SUCCESS;
 }
