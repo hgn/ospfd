@@ -34,7 +34,7 @@ void free_neighbor(struct ospfd *ospfd, struct neighbor *neighbor)
 	free(neighbor);
 }
 
-static void neighbor_set_state(struct ospfd *ospfd,
+static void neighbor_set_state(struct ospfd *ospfd, struct interface_data *interface_data,
 		struct neighbor *neighbor, int new_state)
 {
 	neighbor->state = new_state;
@@ -42,26 +42,27 @@ static void neighbor_set_state(struct ospfd *ospfd,
 
 void neighbor_inactive_timer_expired(int fd, void *data)
 {
-	struct inactivity_timer_data *inactivity_timer_data;
-	struct ospfd *ospfd;
-	struct neighbor *neighbor;
+	struct inactivity_timer_data *inactivity_timer_data = data;
+	struct ospfd *ospfd = inactivity_timer_data->ospfd;
+	struct neighbor *neighbor = inactivity_timer_data->neighbor;
+	struct interface_data *interface_data = inactivity_timer_data->interface_data;
 
-	ospfd    = inactivity_timer_data->ospfd;
-	neighbor = inactivity_timer_data->neighbor;
+	assert(fd == neighbor->inactive_timer);
 
-	msg(ospfd, DEBUG, "neighbor inactive timer expired");
+	msg(ospfd, DEBUG, "neighbor inactive timer expired (router id: %d)",
+			neighbor->neighbor_id);
 
-	inactivity_timer_data = data;
+	timer_del(ospfd, neighbor->inactive_timer);
 
-	timer_del(ospfd, fd);
-
-	neighbor->inactive_timer = NEIGHBOR_INACTIVE_TIMER_DISABLED;
+	/* remove neighbor from interface list */
+	remove_neighbor_from_interface_data_list(ospfd, interface_data, neighbor);
 
 	free(neighbor->inactivity_timer_data);
 	free(neighbor->timer_priv_data);
+	free(neighbor);
 }
 
-int neighbor_start_inactive_timer(struct ospfd *ospfd, struct neighbor *neighbor)
+int neighbor_start_inactive_timer(struct ospfd *ospfd, struct interface_data *i, struct neighbor *neighbor)
 {
 	int ret;
 	struct inactivity_timer_data *inactivity_timer_data;
@@ -71,11 +72,12 @@ int neighbor_start_inactive_timer(struct ospfd *ospfd, struct neighbor *neighbor
 	inactivity_timer_data = xzalloc(sizeof(struct inactivity_timer_data));
 	inactivity_timer_data->ospfd    = ospfd;
 	inactivity_timer_data->neighbor = neighbor;
+	inactivity_timer_data->interface_data = i;
 
 	neighbor->inactivity_timer_data = inactivity_timer_data;
 
 	/* FIXME: hardcoded 5 seconds time-out */
-	ret = timer_add_s_rel_sovereignty(ospfd, 5, neighbor_inactive_timer_expired, inactivity_timer_data, &neighbor->timer_priv_data, &neighbor->inactive_timer);
+	ret = timer_add_s_rel_sovereignty(ospfd, 1, neighbor_inactive_timer_expired, inactivity_timer_data, &neighbor->timer_priv_data, &neighbor->inactive_timer);
 
 	return SUCCESS;
 }
@@ -92,7 +94,7 @@ int neighbor_cancel_inactive_timer(struct ospfd *ospfd, struct neighbor *neighbo
 	return SUCCESS;
 }
 
-int neighbor_restart_inactive_timer(struct ospfd *ospfd, struct neighbor *neighbor)
+int neighbor_restart_inactive_timer(struct ospfd *ospfd, struct interface_data *interface_data, struct neighbor *neighbor)
 {
 	int ret;
 
@@ -102,7 +104,7 @@ int neighbor_restart_inactive_timer(struct ospfd *ospfd, struct neighbor *neighb
 		return FAILURE;
 
 	/* ... and re-arm the timer again! */
-	ret = neighbor_start_inactive_timer(ospfd, neighbor);
+	ret = neighbor_start_inactive_timer(ospfd, interface_data, neighbor);
 	if (ret != SUCCESS)
 		return FAILURE;
 
@@ -131,7 +133,24 @@ struct neighbor *neighbor_by_id(struct ospfd *ospfd,
 	return list ? list->data : NULL;
 }
 
-int process_state_down_ev_hello_received(struct ospfd *ospfd, struct neighbor *neighbor)
+void remove_neighbor_from_interface_data_list(struct ospfd *ospfd,
+		struct interface_data *interface_data, struct neighbor *neighbor)
+{
+	struct list_e *list;
+
+	list = list_search(interface_data->neighbor_list,
+			neighbor_id_cmp, &neighbor->neighbor_id);
+	if (!list) {
+		msg(ospfd, VERBOSE, "List element does not exist!? %s:%d",
+				__FILE__, __LINE__);
+		return;
+	}
+
+	interface_data->neighbor_list = list_delete_element(list);
+}
+
+int process_state_down_ev_hello_received(struct ospfd *ospfd,
+		struct interface_data *i, struct neighbor *neighbor)
 {
 	int ret;
 
@@ -140,23 +159,23 @@ int process_state_down_ev_hello_received(struct ospfd *ospfd, struct neighbor *n
 	assert(neighbor->inactive_timer == NEIGHBOR_INACTIVE_TIMER_DISABLED);
 
 	/* set state to INIT */
-	neighbor_set_state(ospfd, neighbor, NEIGHBOR_STATE_INIT);
+	neighbor_set_state(ospfd, i, neighbor, NEIGHBOR_STATE_INIT);
 
-	ret = neighbor_start_inactive_timer(ospfd, neighbor);
+	ret = neighbor_start_inactive_timer(ospfd, i, neighbor);
 	if (ret != SUCCESS)
 		return FAILURE;
 
 	return SUCCESS;
 }
 
-int process_state_init_ev_hello_received(struct ospfd *ospfd,
-		struct neighbor *neighbor, int new_state)
+int process_state_init_ev_hello_received(struct ospfd *o, struct interface_data *i,
+		struct neighbor *n, int new_state)
 {
 	int ret;
 
-	assert(neighbor->inactive_timer != NEIGHBOR_INACTIVE_TIMER_DISABLED);
+	assert(n->inactive_timer != NEIGHBOR_INACTIVE_TIMER_DISABLED);
 
-	ret = neighbor_restart_inactive_timer(ospfd, neighbor);
+	ret = neighbor_restart_inactive_timer(o, i, n);
 	if (ret != SUCCESS)
 		return FAILURE;
 
@@ -164,12 +183,12 @@ int process_state_init_ev_hello_received(struct ospfd *ospfd,
 }
 
 
-int process_state_down_to_new_state(struct ospfd *o,
+int process_state_down_to_new_state(struct ospfd *o, struct interface_data *i,
 		struct neighbor *n, int event)
 {
 	switch (event) {
 		case NEIGHBOR_EV_HELLO_RECEIVED:
-			return process_state_down_ev_hello_received(o, n);
+			return process_state_down_ev_hello_received(o, i, n);
 			break;
 		default:
 			err_msg_die(EXIT_FAILURE, "State no handled: %s:%d",
@@ -181,12 +200,12 @@ int process_state_down_to_new_state(struct ospfd *o,
 	return FAILURE;
 }
 
-int process_state_init_to_new_state(struct ospfd *o,
+int process_state_init_to_new_state(struct ospfd *o, struct interface_data *i,
 		struct neighbor *n, int s)
 {
 	switch (s) {
 		case NEIGHBOR_EV_HELLO_RECEIVED:
-			return process_state_init_ev_hello_received(o, n, s);
+			return process_state_init_ev_hello_received(o, i, n, s);
 			break;
 		default:
 			err_msg_die(EXIT_FAILURE, "State no handled: %s:%d",
@@ -239,15 +258,15 @@ void process_state_full_to_new_state(struct ospfd *ospfd,
 }
 
 
-int neighbor_process_event(struct ospfd *ospfd,
+int neighbor_process_event(struct ospfd *ospfd, struct interface_data *interface_data,
 		struct neighbor *neighbor, int event)
 {
 	switch (neighbor->state) {
 		case NEIGHBOR_STATE_DOWN:
-			return process_state_down_to_new_state(ospfd, neighbor, event);
+			return process_state_down_to_new_state(ospfd, interface_data, neighbor, event);
 			break;
 		case NEIGHBOR_STATE_INIT:
-			return process_state_init_to_new_state(ospfd, neighbor, event);
+			return process_state_init_to_new_state(ospfd, interface_data, neighbor, event);
 			break;
 		case NEIGHBOR_STATE_ATTEMPT:
 		case NEIGHBOR_STATE_TWO_WAY:

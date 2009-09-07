@@ -54,13 +54,13 @@ int hello_ipv4_in(struct ospfd *ospfd, struct o_buf *o_buf)
 	neighbor = neighbor_by_id(ospfd, inf_data, neighbor_id);
 	if (neighbor) {
 		msg(ospfd, DEBUG, "received HELLO packet - neighbor was already known");
-		neighbor_process_event(ospfd, neighbor, NEIGHBOR_EV_HELLO_RECEIVED);
+		neighbor_process_event(ospfd, inf_data, neighbor, NEIGHBOR_EV_HELLO_RECEIVED);
 	} else { /* new neighbor - welcome! */
 		msg(ospfd, DEBUG, "received HELLO packet - neighbor is new");
 		neighbor = alloc_neighbor();
 		save_hello_data_for_neighbor(ospfd, o_buf, neighbor);
 		interface_add_neighbor(inf_data, neighbor);
-		neighbor_process_event(ospfd, neighbor, NEIGHBOR_EV_HELLO_RECEIVED);
+		neighbor_process_event(ospfd, inf_data, neighbor, NEIGHBOR_EV_HELLO_RECEIVED);
 	}
 
 

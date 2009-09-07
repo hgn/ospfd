@@ -95,10 +95,11 @@ enum {
 };
 
 struct neighbor *neighbor_by_id(struct ospfd *, struct interface_data *, uint32_t);
-int neighbor_start_inactive_timer(struct ospfd *, struct neighbor *);
+int neighbor_start_inactive_timer(struct ospfd *, struct interface_data *, struct neighbor *);
 int neighbor_cancel_inactive_timer(struct ospfd *, struct neighbor *);
 void interface_add_neighbor(struct interface_data *, struct neighbor *);
 struct neighbor *alloc_neighbor(void);
-int neighbor_process_event(struct ospfd *, struct neighbor *, int);
+int neighbor_process_event(struct ospfd *, struct interface_data *, struct neighbor *, int);
+void remove_neighbor_from_interface_data_list(struct ospfd *, struct interface_data *, struct neighbor *);
 
 #endif /* NEIGHBOR_H */

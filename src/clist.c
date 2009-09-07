@@ -81,7 +81,34 @@ struct list_e *list_delete_after(struct list_e *after)
 	free(tmp);
 
 	return after->next;
+}
 
+struct list_e *list_delete_element(struct list_e *element)
+{
+	struct list_e *ret;
+
+	/* the only element */
+	if (element->next == NULL) {
+		free(element);
+		return NULL;
+	}
+
+	/* two elements */
+	if (element->next == element) {
+		element->prev->next = NULL;
+		element->prev->prev = NULL;
+		ret = element->prev;
+		free(element);
+		return ret;
+	}
+
+	/* more the two elements */
+	ret = element->prev;
+	element->prev->next = element->next;
+	element->next->prev = element->prev;
+	free(element);
+
+	return ret;
 }
 
 int list_delete(struct list_e *n, void (*cb)(void *data))
@@ -112,7 +139,7 @@ int list_for_each(struct list_e *n, void (*cb)(const void *data))
 	while (after) {
 		tmp = after->next;
 		cb(after->data); /* call callback handler */
-		free(after);
+		//free(after);
 		after = tmp;
 		if (after == taddr)
 			break;

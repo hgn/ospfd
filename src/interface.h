@@ -8,6 +8,7 @@
 struct inactivity_timer_data {
 	struct ospfd *ospfd;
 	struct neighbor *neighbor;
+	struct interface_data *interface_data;
 };
 
 struct neighbor {
