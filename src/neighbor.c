@@ -23,14 +23,21 @@ struct neighbor *alloc_neighbor(void)
 
 void interface_add_neighbor(struct interface_data *interface_data, struct neighbor *neighbor)
 {
-	interface_data->neighbor_list = list_insert_before(interface_data->neighbor_list, neighbor);
+	int ret;
+
+	ret = list_insert(interface_data->neighbor_list, neighbor);
+	if (ret != SUCCESS) {
+		fprintf(stderr, "Cannot insert neigbor into list\n");
+		abort();
+	}
 }
 
-void free_neighbor(struct ospfd *ospfd, struct neighbor *neighbor)
+/* it is up to the callee to remove this neighbor out
+ * of any lists */
+void free_neighbor(void *a)
 {
-	/* XXX: is MUST be no race between the timer cancelization
-	 * and the freeing of ressources of this neighbor. */
-	neighbor_cancel_inactive_timer(ospfd, neighbor);
+	struct neighbor *neighbor = a;
+	memset(neighbor, 0, sizeof(struct neighbor));
 	free(neighbor);
 }
 
@@ -111,6 +118,16 @@ int neighbor_restart_inactive_timer(struct ospfd *ospfd, struct interface_data *
 	return SUCCESS;
 }
 
+/* returns true if the neighbor id is identical
+ * and false in all other cases */
+int list_neighbor_id_cmp(const void *a, const void *b)
+{
+	const struct neighbor *aa = (struct neighbor *)a;
+	const struct neighbor *bb = (struct neighbor *)b;
+
+	return aa->neighbor_id == bb->neighbor_id;
+}
+
 
 static int neighbor_id_cmp(void *a, void *b)
 {
@@ -121,32 +138,34 @@ static int neighbor_id_cmp(void *a, void *b)
 }
 
 
+/* for a given interface data and neighbor id this
+ * function returns the neighbor data structure or
+ * NULL in the cases that these neighbor is not in
+ * the interface data structure */
 struct neighbor *neighbor_by_id(struct ospfd *ospfd,
 		struct interface_data *interface_data, uint32_t neighbor_id)
 {
-	struct list_e *list;
 	(void) ospfd;
+	struct neighbor *neighbor;
 
-	list = list_search(interface_data->neighbor_list,
+	neighbor = list_lookup_match(interface_data->neighbor_list,
 			neighbor_id_cmp, &neighbor_id);
 
-	return list ? list->data : NULL;
+	return neighbor ? neighbor : NULL;
 }
 
 void remove_neighbor_from_interface_data_list(struct ospfd *ospfd,
 		struct interface_data *interface_data, struct neighbor *neighbor)
 {
-	struct list_e *list;
+	int ret;
 
-	list = list_search(interface_data->neighbor_list,
-			neighbor_id_cmp, &neighbor->neighbor_id);
-	if (!list) {
-		msg(ospfd, VERBOSE, "List element does not exist!? %s:%d",
-				__FILE__, __LINE__);
-		return;
+	/* this impliciet calls the compare function of
+	 * interface_data->neighbor_list */
+	ret = list_remove(interface_data->neighbor_list, (void **)&neighbor);
+	if (ret != SUCCESS) {
+		fprintf(stderr, "Cannot remove neigbor from list\n");
+		abort();
 	}
-
-	interface_data->neighbor_list = list_delete_element(list);
 }
 
 int process_state_down_ev_hello_received(struct ospfd *ospfd,

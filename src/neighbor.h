@@ -101,5 +101,6 @@ void interface_add_neighbor(struct interface_data *, struct neighbor *);
 struct neighbor *alloc_neighbor(void);
 int neighbor_process_event(struct ospfd *, struct interface_data *, struct neighbor *, int);
 void remove_neighbor_from_interface_data_list(struct ospfd *, struct interface_data *, struct neighbor *);
+int list_neighbor_id_cmp(const void *, const void *);
 
 #endif /* NEIGHBOR_H */

@@ -16,6 +16,25 @@
 #include "event.h"
 #include "interface.h"
 
+/* returns true if both interfaces
+ * are identical */
+int list_cmp_rd(const void *a, const void *b)
+{
+	const struct rd *aa = a;
+	const struct rd *bb = b;
+
+	return aa->if_index == bb->if_index;
+}
+
+void list_free_rd(void *a)
+{
+	struct rd *rd = (struct rd *) a;
+
+	list_destroy(rd->ip_addr_list);
+	free(rd);
+}
+
+
 static int join_router_4_multicast(int fd)
 {
 	int ret = SUCCESS;
@@ -86,6 +105,44 @@ static void fini_raw_socket(struct ospfd *ospfd)
 	close(ospfd->network.fd);
 }
 
+void free_ip_addr(void *ip_addr)
+{
+	free(ip_addr);
+}
+
+/* return true if both addresses are equal - otherwise false */
+int list_cmp_struct_ip_addr(const void *a, const void *b)
+{
+	const struct ip_addr *aa = (struct ip_addr *) a;
+	const struct ip_addr *bb = (struct ip_addr *) b;
+
+	if (aa->family != bb->family)
+		return 0;
+
+	switch (aa->family) {
+
+		case AF_INET:
+			if (aa->ipv4.addr.s_addr      == bb->ipv4.addr.s_addr    &&
+			    aa->ipv4.netmask.s_addr   == bb->ipv4.netmask.s_addr &&
+			    aa->ipv4.broadcast.s_addr == bb->ipv4.broadcast.s_addr)
+				return 1;
+			else
+				return 0;
+			break;
+
+		case AF_INET6:
+			if (!(memcmp(&aa->ipv6.addr, &bb->ipv6.addr, sizeof(struct in6_addr)))       &&
+			    !(memcmp(&aa->ipv6.netmask, &bb->ipv6.netmask, sizeof(struct in6_addr))) &&
+			     (aa->ipv6.scope == bb->ipv6.scope))
+				return 1;
+			else
+				return 0;
+		default:
+			/* dont know how to compare */
+			abort();
+	}
+}
+
 static void print_all_addresses(const void *data)
 {
 	const struct ip_addr *ip_addr = (struct ip_addr *) data;
@@ -117,11 +174,10 @@ void print_all_interfaces(const void *data)
 
 	fprintf(stdout, "%-10s <%d>\n", rd->if_name, rd->if_flags);
 
-	list_for_each(rd->ip_addr_list, print_all_addresses);
+	//list_for_each(rd->ip_addr_list, print_all_addresses);
 
 	return;
 }
-
 
 static int ifname_cmp(void *d1, void *d2)
 {
@@ -129,21 +185,6 @@ static int ifname_cmp(void *d1, void *d2)
 	char *ifname = (char *)d2;
 
 	return !strcmp(rd->if_name, ifname);
-}
-
-static void clear_ip_addr_entries(void *data)
-{
-	free(data);
-}
-
-static void clear_rd_entries(void *data)
-{
-	struct rd *rd = (struct rd *) data;
-
-	/* remove all ip addresses first */
-	list_delete(rd->ip_addr_list, clear_ip_addr_entries);
-
-	free(rd);
 }
 
 static int get_interface_addr(struct ospfd *ospfd)
@@ -154,7 +195,8 @@ static int get_interface_addr(struct ospfd *ospfd)
 	/* First of all: remove all entries if any is available.
 	 * This makes this method re-callable to refresh the interface address
 	 * status.  */
-	list_delete(ospfd->network.rd_list, clear_rd_entries);
+	list_destroy(ospfd->network.rd_list);
+	ospfd->network.rd_list = list_create(list_cmp_rd, list_free_rd);
 
 	ret = getifaddrs(&ifaddr);
 	if (ret < 0) {
@@ -186,17 +228,18 @@ static int get_interface_addr(struct ospfd *ospfd)
 		 * this interface. If we found is we add the new
 		 * IP address, if not we add a new routing domain
 		 * and also add the IP address */
-		struct list_e *list;
-		list = list_search(ospfd->network.rd_list, ifname_cmp, ifaddr->ifa_name);
-		if (list == NULL) { /* new interface ... */
+		rd = list_lookup_match(ospfd->network.rd_list, ifname_cmp, ifaddr->ifa_name);
+		if (rd == NULL) { /* new interface ... */
 			rd = xzalloc(sizeof(struct rd));
-			ospfd->network.rd_list = list_insert_after(ospfd->network.rd_list, rd);
+			ret = list_ins_next(ospfd->network.rd_list, NULL, rd);
+			if (ret != SUCCESS) {
+				fprintf(stderr, "Failure in inserting rd\n");
+				abort();
+			}
 			memcpy(rd->if_name, ifaddr->ifa_name,
 					min((strlen(ifaddr->ifa_name) + 1), sizeof(rd->if_name)));
 			rd->if_flags  = ifaddr->ifa_flags; /* see netdevice(7) for list of flags */
-			rd->ip_addr_list = list_create();
-		} else {
-			rd = list->data;
+			rd->ip_addr_list = list_create(list_cmp_struct_ip_addr, free_ip_addr);
 		}
 
 		/* interface specific setup is fine, we can
@@ -235,7 +278,7 @@ static int get_interface_addr(struct ospfd *ospfd)
 		}
 
 		/* and at the newly data at the end of the list */
-		rd->ip_addr_list = list_insert_before(rd->ip_addr_list, ip_addr);
+		list_insert(rd->ip_addr_list, ip_addr);
 
 next:
 		ifaddr = ifaddr->ifa_next;

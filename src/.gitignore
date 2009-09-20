@@ -1,0 +1,7 @@
+.*
+lex.yy.c
+ospfd
+parser.tab.c
+parser.tab.h
+
+!.gitignore

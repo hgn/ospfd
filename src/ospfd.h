@@ -97,7 +97,7 @@ struct rd {
 	char if_name[IF_NAMESIZE];
 	unsigned int if_index;
 	unsigned int if_flags;
-	struct list_e *ip_addr_list;
+	struct list *ip_addr_list;
 };
 
 struct stats {
@@ -110,7 +110,7 @@ struct stats {
 struct network {
 	int fd;
 	struct stats stats;
-	struct list_e *rd_list;
+	struct list *rd_list;
 };
 
 #define	MAX_LEN_DESCRIPTION 1024
@@ -293,7 +293,7 @@ struct interface_data {
 	   this network. This list is formed by the Hello Protocol. Adjacencies
 	   will be formed to some of these neighbors. The set of adjacent neighbors
 	   can be determined by an examination of all of the neighbors' states. */
-	struct list_e *neighbor_list;
+	struct list *neighbor_list;
 
 };
 
@@ -310,7 +310,7 @@ struct ospfd {
 	struct opts opts;
 	struct network network;
 	struct ev ev;
-	struct list_e *interface_data_list;
+	struct list *interface_data_list;
 };
 
 /* a wrapper struct to expand the limitation

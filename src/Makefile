@@ -23,9 +23,14 @@ TARGET=ospfd
 
 CC = gcc
 LIBS = -lm -lrt
-CFLAGS = -Wall -W -pipe -g -Wwrite-strings -Wsign-compare \
-				 -Wshadow -Wformat=2 -Wundef -Wstrict-prototypes \
-				 -fno-strict-aliasing -fno-common -fomit-frame-pointer
+CFLAGS := -Wall -W -ggdb3 -pipe -Wextra -pipe -Wwrite-strings \
+				 -Wsign-compare -Wshadow -Wformat=2 -Wundef -Wstrict-prototypes \
+				 -fno-strict-aliasing -fno-common -Wformat-security \
+				 -Wformat-y2k -Winit-self -Wpacked -Wredundant-decls \
+				 -Wstrict-aliasing=3 -Wswitch-default -Wswitch-enum \
+				 -Wno-system-headers -Wundef -Wvolatile-register-var \
+				 -Wcast-align -Wbad-function-cast -Wwrite-strings \
+				 -Wold-style-definition  -Wdeclaration-after-statement
 
 all: $(TARGET)
 

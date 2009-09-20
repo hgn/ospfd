@@ -81,10 +81,15 @@ int parse_rc_file(struct ospfd *ospfd)
 
 static struct interface_data *init_new_interface_data(struct ospfd *ospfd, char *inf_name)
 {
+	int ret;
 	struct interface_data *interface_data = alloc_interface_data();
 
 	/* insert into global interface_data list */
-	xospfd->interface_data_list = list_insert_after(ospfd->interface_data_list, interface_data);
+	ret = list_insert(ospfd->interface_data_list, interface_data);
+	if (ret != SUCCESS) {
+		fprintf(stderr, "Cannot insert interface data to list\n");
+		abort();
+	}
 
 	/* save interface name */
 	memcpy(interface_data->if_name, inf_name,
@@ -101,16 +106,16 @@ static int search_interface_data_for_interface(void *d1, void *d2)
 	return !strcmp(interface_data->if_name, if_name);
 }
 
+/* returns the interface_data structure for the searched interface
+ * or returns a newly created interface_data structure
+ * if the interface first time seen */
 static struct interface_data *get_interface_data_by_interface(struct ospfd *ospfd, char *interface)
 {
 	struct interface_data *interface_data;
-	struct list_e *list;
 
-	list = list_search(ospfd->interface_data_list, search_interface_data_for_interface, interface);
-	if (list == NULL) {
-		interface_data = init_new_interface_data(xospfd, interface);
-	} else {
-		interface_data = list->data;
+	interface_data = list_lookup_match(ospfd->interface_data_list, search_interface_data_for_interface, interface);
+	if (interface_data == NULL) {
+		return init_new_interface_data(xospfd, interface);
 	}
 
 	return interface_data;
@@ -192,16 +197,13 @@ void rc_set_hello_interval(char *interface, char *interval)
 void rc_show_interface(char *interface)
 {
 	struct interface_data *interface_data;
-	struct list_e *list;
 	char addr[INET6_ADDRSTRLEN], mask[INET6_ADDRSTRLEN];
 
-	list = list_search(xospfd->interface_data_list, search_interface_data_for_interface, interface);
-	if (list == NULL) {
+	interface_data = list_lookup_match(xospfd->interface_data_list, search_interface_data_for_interface, interface);
+	if (interface_data == NULL) {
 		fprintf(stderr, "Interface %s not konfigured!\n", interface);
 		return;
 	}
-
-	interface_data = list->data;
 
 	switch (interface_data->ip_addr.family) {
 		case AF_INET:

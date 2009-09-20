@@ -48,6 +48,10 @@ int init_network(struct ospfd *);
 void fini_network(struct ospfd *);
 uint16_t calc_fl_checksum(char *, uint16_t, uint16_t);
 void init_o_buf(struct o_buf *);
+int list_cmp_struct_ip_addr(const void *, const void *);
+void free_ip_addr(void *);
+int list_cmp_rd(const void *, const void *);
+void list_free_rd(void *);
 
 /* rx.c */
 int ipv4_input(const char *);

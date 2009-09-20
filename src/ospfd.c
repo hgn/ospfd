@@ -15,6 +15,22 @@
 #include "hello_tx.h"
 #include "rc.h"
 
+static int list_cmp_interface_data(const void *a, const void *b)
+{
+	const struct interface_data *aa = a;
+	const struct interface_data *bb = b;
+
+	return !(strcmp(aa->if_name, bb->if_name));
+}
+
+static void list_free_interface_data(void *a)
+{
+	struct interface_data *aa = a;
+
+	list_destroy(aa->neighbor_list);
+	free(aa);
+}
+
 
 static struct ospfd *alloc_ospfd(void)
 {
@@ -22,8 +38,8 @@ static struct ospfd *alloc_ospfd(void)
 
 	o = xzalloc(sizeof(struct ospfd));
 
-	o->network.rd_list     = list_create();
-	o->interface_data_list = list_create();
+	o->network.rd_list     = list_create(list_cmp_rd, list_free_rd);
+	o->interface_data_list = list_create(list_cmp_interface_data, list_free_interface_data);
 
 	return o;
 }

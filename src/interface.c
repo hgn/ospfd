@@ -19,8 +19,7 @@ struct interface_data *interface_data_for_index(const struct ospfd *ospfd,
 		unsigned int infindex)
 {
 	char ifname[IF_NAMESIZE + 1], *cptr;
-	struct list_e *list;
-	struct list_e *interface_data_list;
+	struct interface_data *data;
 
 	cptr = ifname;
 
@@ -29,13 +28,14 @@ struct interface_data *interface_data_for_index(const struct ospfd *ospfd,
 		return NULL;
 	}
 
-	/* search routing interface for this interface name */
-	interface_data_list = ospfd->interface_data_list;
+	data = list_lookup_match(ospfd->interface_data_list,
+			interface_data_name_cmp, ifname);
 
-	list = list_search(interface_data_list, interface_data_name_cmp, ifname);
-
-	return list ? list->data : NULL;
+	return data ? data : NULL;
 }
+
+extern int list_neighbor_id_cmp(const void *a, const void *b);
+extern void free_neighbor(void *);
 
 struct interface_data *alloc_interface_data(void)
 {
@@ -51,7 +51,7 @@ struct interface_data *alloc_interface_data(void)
 
 	/* initialize the list of (hopefully) upcoming neighbors
 	   for this interface */
-	interface_data->neighbor_list = list_create();
+	interface_data->neighbor_list = list_create(list_neighbor_id_cmp, free_neighbor);
 
 	return interface_data;
 }

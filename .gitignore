@@ -1,0 +1,27 @@
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+#
+# Normal rules
+#
+.*
+*.o
+*.o.*
+*.a
+*.s
+*.ko
+*.so
+*.so.dbg
+*.gz
+*.patch
+
+!.gitignore
+!.mailmap
+
+# cscope files
+cscope.*
+ncscope.*
+
+*.orig
+*~
+\#*#
