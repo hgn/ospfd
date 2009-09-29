@@ -10,8 +10,6 @@
 #include "network.h"
 #include "shared.h"
 #include "buf.h"
-#include "event.h"
-#include "timer.h"
 #include "hello_tx.h"
 #include "rc.h"
 
@@ -54,6 +52,7 @@ int main(int ac, char **av)
 {
 	int ret;
 	struct ospfd *ospfd;
+	int ev_flags = 0;
 
 	ospfd = alloc_ospfd();
 
@@ -68,8 +67,8 @@ int main(int ac, char **av)
 
 	/* initialize event subsystem. In this case this belongs
 	 * to open a epoll filedescriptor */
-	ret = ev_init(ospfd);
-	if (ret != SUCCESS)
+	ospfd->ev = ev_new();
+	if (!ospfd->ev)
 		err_msg_die(EXIT_FAILURE, "Can't initialize event subsystem");
 
 
@@ -85,13 +84,14 @@ int main(int ac, char **av)
 	/* and branch into the main loop
 	 * This loop will never return (with the exception of SIGINT or failure
 	 * condition) */
-	ret = ev_loop(ospfd);
+	ret = ev_loop(ospfd->ev, ev_flags);
 	if (ret != SUCCESS)
 		err_msg_die(EXIT_FAILURE, "Main loop returned unexpected - exiting now");
 
 
 	fini_network(ospfd);
 	free_options(ospfd);
+	ev_free(ospfd->ev);
 	free_ospfd(ospfd);
 
 	return EXIT_SUCCESS;

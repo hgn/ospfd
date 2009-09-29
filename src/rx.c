@@ -175,12 +175,14 @@ static void save_msghdr_infos(struct o_buf *o_buf, struct msghdr *msghdr)
 
 /* called from event mechanism if socket
  * status changes - normally to readable state */
-void packet_input(int fd, void *priv_data)
+void packet_input(int fd, int what, void *priv_data)
 {
 	int ret;
 	struct ospfd *ospfd;
 	struct o_buf o_buf;
 	char raw_packet_buf[MAX_PACKET_SIZE];
+
+	(void) what;
 
 	ospfd = priv_data;
 

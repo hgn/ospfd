@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <net/if.h>
 
+#include "ev.h"
+
 #define min(x,y) ({                     \
         typeof(x) _x = (x);             \
         typeof(y) _y = (y);             \
@@ -297,19 +299,11 @@ struct interface_data {
 
 };
 
-#define	EVENT_BACKING_STORE_HINT 64
-#define	EVENT_ARRAY_SIZE 64
-struct ev {
-	int fd;
-	size_t size;
-};
-
-
 struct ospfd {
 	uint32_t router_id;
 	struct opts opts;
 	struct network network;
-	struct ev ev;
+	struct ev *ev;
 	struct list *interface_data_list;
 };
 

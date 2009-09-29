@@ -6,7 +6,7 @@
 #include "ospfd.h"
 #include "ospf_packets.h"
 
-void tx_ipv4_hello_packet(int, void *);
+void tx_ipv4_hello_packet(void *);
 
 
 #endif /* HELLO_TX_H */

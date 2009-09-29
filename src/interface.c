@@ -4,7 +4,6 @@
 
 #include "shared.h"
 #include "hello_tx.h"
-#include "timer.h"
 #include "interface.h"
 
 int interface_data_name_cmp(void *d1, void *d2)
@@ -19,7 +18,6 @@ struct interface_data *interface_data_for_index(const struct ospfd *ospfd,
 		unsigned int infindex)
 {
 	char ifname[IF_NAMESIZE + 1], *cptr;
-	struct interface_data *data;
 
 	cptr = ifname;
 
@@ -28,10 +26,8 @@ struct interface_data *interface_data_for_index(const struct ospfd *ospfd,
 		return NULL;
 	}
 
-	data = list_lookup_match(ospfd->interface_data_list,
+	return list_lookup_match(ospfd->interface_data_list,
 			interface_data_name_cmp, ifname);
-
-	return data ? data : NULL;
 }
 
 extern int list_neighbor_id_cmp(const void *a, const void *b);
@@ -60,6 +56,8 @@ static void s_down_rx_up(struct ospfd *ospfd, struct interface_data *interface_d
 {
 	int hello_start, ret;
 	struct tx_hello_arg *txha;
+	struct ev_entry *ee;
+	struct timespec timespec;
 
 	/* the interface was down and is now re-enabled -> start
 	 * HELLO timer */
@@ -73,12 +71,22 @@ static void s_down_rx_up(struct ospfd *ospfd, struct interface_data *interface_d
 	hello_start = interface_data->hello_interval ?
 		interface_data->hello_interval : OSPF_DEFAULT_HELLO_INTERVAL;
 
-	/* initialize timer for regular HELLO packet transmission */
-	ret = timer_add_s_rel(ospfd, hello_start, tx_ipv4_hello_packet, txha);
-	if (ret != SUCCESS) {
-		err_msg("Can't add timer for HELLO packet generation");
+	timespec.tv_sec  = hello_start;
+	timespec.tv_nsec = 0;
+
+	ee = ev_timer_new(&timespec, tx_ipv4_hello_packet, txha);
+	if (!ee) {
+		err_msg("failed to create timer\n");
 		return;
 	}
+
+	ret = ev_add(ospfd->ev, ee);
+	if (ret != EV_SUCCESS) {
+		err_msg("failed to add timer to event handler\n");
+		return;
+	}
+
+	msg(ospfd, VERBOSE, "register HELLO generation in %d seconds", hello_start);
 
 	return;
 }

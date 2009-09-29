@@ -13,7 +13,6 @@
 
 #include "network.h"
 #include "shared.h"
-#include "event.h"
 #include "interface.h"
 
 /* returns true if both interfaces
@@ -337,7 +336,7 @@ uint16_t calc_fl_checksum(char *buf, uint16_t pos, uint16_t len)
 int init_network(struct ospfd *ospfd)
 {
 	int ret;
-	uint32_t flags;
+	struct ev_entry *ee;
 
 	switch (ospfd->opts.family) {
 		case AF_INET:
@@ -347,9 +346,13 @@ int init_network(struct ospfd *ospfd)
 				return FAILURE;
 			}
 			/* and register fd */
-			flags = EPOLLIN | EPOLLPRI | EPOLLERR | EPOLLHUP;
-			ret = ev_add(ospfd, ospfd->network.fd, packet_input, ospfd, flags, EVENT_REPEAT);
-			if (ret < 0) {
+			ee = ev_entry_new(ospfd->network.fd, EV_READ, packet_input, ospfd);
+			if (!ee) {
+				err_msg("cannot at RAW socket to event mechanism");
+				return FAILURE;
+			}
+			ret = ev_add(ospfd->ev, ee);
+			if (ret != EV_SUCCESS) {
 				err_msg("cannot at RAW socket to event mechanism");
 				return FAILURE;
 			}

@@ -9,8 +9,6 @@
 #include "ospfd.h"
 #include "shared.h"
 #include "buf.h"
-#include "event.h"
-#include "timer.h"
 #include "hello_rx.h"
 #include "interface.h"
 #include "neighbor.h"

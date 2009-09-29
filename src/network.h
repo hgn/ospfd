@@ -55,7 +55,7 @@ void list_free_rd(void *);
 
 /* rx.c */
 int ipv4_input(const char *);
-void packet_input(int, void *);
+void packet_input(int, int, void *);
 
 
 #endif /* NETWORK_H */

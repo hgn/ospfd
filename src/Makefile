@@ -3,8 +3,6 @@ OBJ=buf.o        \
 		network.o    \
 		rx.o         \
 		rbtree.o     \
-		timer.o      \
-		event.o      \
 		hello_tx.o   \
 		hello_rx.o   \
 		cli_opt.o    \
@@ -14,6 +12,7 @@ OBJ=buf.o        \
 		clist.o      \
 		interface.o  \
 		neighbor.o   \
+		ev.o         \
 		ospfd.o
 
 TARGET=ospfd
@@ -32,6 +31,8 @@ CFLAGS := -Wall -W -ggdb3 -pipe -Wextra -pipe -Wwrite-strings \
 				 -Wcast-align -Wbad-function-cast -Wwrite-strings \
 				 -Wold-style-definition  -Wdeclaration-after-statement
 
+CFLAGS += -DHAVE_EPOLL
+
 all: $(TARGET)
 
 lex.yy.c: lexer.l
@@ -48,3 +49,6 @@ $(TARGET): $(OBJ)
 
 clean:
 	-rm -f $(OBJ) $(TARGET) lex.yy.c parser.tab.h parser.tab.c *~ core
+
+cscope:
+	cscope -R -b

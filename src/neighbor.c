@@ -5,7 +5,6 @@
 
 #include "shared.h"
 #include "hello_tx.h"
-#include "timer.h"
 #include "interface.h"
 #include "neighbor.h"
 
@@ -16,7 +15,6 @@ struct neighbor *alloc_neighbor(void)
 	neighbor = xzalloc(sizeof(struct neighbor));
 
 	neighbor->state = NEIGHBOR_STATE_DOWN;
-	neighbor->inactive_timer = NEIGHBOR_INACTIVE_TIMER_DISABLED;
 
 	return neighbor;
 }
@@ -47,25 +45,20 @@ static void neighbor_set_state(struct ospfd *ospfd, struct interface_data *inter
 	neighbor->state = new_state;
 }
 
-void neighbor_inactive_timer_expired(int fd, void *data)
+void neighbor_inactive_timer_expired(void *data)
 {
 	struct inactivity_timer_data *inactivity_timer_data = data;
 	struct ospfd *ospfd = inactivity_timer_data->ospfd;
 	struct neighbor *neighbor = inactivity_timer_data->neighbor;
 	struct interface_data *interface_data = inactivity_timer_data->interface_data;
 
-	assert(fd == neighbor->inactive_timer);
-
 	msg(ospfd, DEBUG, "neighbor inactive timer expired (router id: %d)",
 			neighbor->neighbor_id);
-
-	timer_del(ospfd, neighbor->inactive_timer);
 
 	/* remove neighbor from interface list */
 	remove_neighbor_from_interface_data_list(ospfd, interface_data, neighbor);
 
 	free(neighbor->inactivity_timer_data);
-	free(neighbor->timer_priv_data);
 	free(neighbor);
 }
 
@@ -73,6 +66,9 @@ int neighbor_start_inactive_timer(struct ospfd *ospfd, struct interface_data *i,
 {
 	int ret;
 	struct inactivity_timer_data *inactivity_timer_data;
+	/* FIXME: hardcoded time-out */
+	struct timespec timespec = { 10, 0 };
+	struct ev_entry *ev_entry;
 
 	msg(ospfd, DEBUG, "prepare inactive timer for neighbor");
 
@@ -83,19 +79,31 @@ int neighbor_start_inactive_timer(struct ospfd *ospfd, struct interface_data *i,
 
 	neighbor->inactivity_timer_data = inactivity_timer_data;
 
-	/* FIXME: hardcoded 5 seconds time-out */
-	ret = timer_add_s_rel_sovereignty(ospfd, 1, neighbor_inactive_timer_expired, inactivity_timer_data, &neighbor->timer_priv_data, &neighbor->inactive_timer);
+	ev_entry = ev_timer_new(&timespec, neighbor_inactive_timer_expired, inactivity_timer_data);
+	if (!ev_entry) {
+		err_msg_die(EXIT_FAILURE, "Cannot initialize a new timer");
+	}
+
+	inactivity_timer_data->neighbor->inactive_timer_entry = ev_entry;
+
+	ret = ev_add(ospfd->ev, ev_entry);
+	if (ret != EV_SUCCESS) {
+		err_msg_die(EXIT_FAILURE, "Cannot add new timer to global event handler");
+	}
 
 	return SUCCESS;
 }
 
 int neighbor_cancel_inactive_timer(struct ospfd *ospfd, struct neighbor *neighbor)
 {
-	msg(ospfd, DEBUG, "cancel neighbor inactive timer (fd: %d)", neighbor->inactive_timer);
+	assert(ospfd->ev);
+	assert(neighbor);
+	assert(neighbor->inactive_timer_entry);
 
-	timer_del_early(ospfd, neighbor->inactive_timer);
+	msg(ospfd, DEBUG, "cancel neighbor inactive timer");
 
-	free(neighbor->timer_priv_data);
+	ev_timer_cancel(ospfd->ev, neighbor->inactive_timer_entry);
+
 	free(neighbor->inactivity_timer_data);
 
 	return SUCCESS;
@@ -145,8 +153,9 @@ static int neighbor_id_cmp(void *a, void *b)
 struct neighbor *neighbor_by_id(struct ospfd *ospfd,
 		struct interface_data *interface_data, uint32_t neighbor_id)
 {
-	(void) ospfd;
 	struct neighbor *neighbor;
+
+	(void) ospfd;
 
 	neighbor = list_lookup_match(interface_data->neighbor_list,
 			neighbor_id_cmp, &neighbor_id);
@@ -173,10 +182,6 @@ int process_state_down_ev_hello_received(struct ospfd *ospfd,
 {
 	int ret;
 
-	/* this is a new neighbor - there must be no running
-	 * inactivity timer for this neighbor */
-	assert(neighbor->inactive_timer == NEIGHBOR_INACTIVE_TIMER_DISABLED);
-
 	/* set state to INIT */
 	neighbor_set_state(ospfd, i, neighbor, NEIGHBOR_STATE_INIT);
 
@@ -191,8 +196,6 @@ int process_state_init_ev_hello_received(struct ospfd *o, struct interface_data 
 		struct neighbor *n, int new_state)
 {
 	int ret;
-
-	assert(n->inactive_timer != NEIGHBOR_INACTIVE_TIMER_DISABLED);
 
 	ret = neighbor_restart_inactive_timer(o, i, n);
 	if (ret != SUCCESS)

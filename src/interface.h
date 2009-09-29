@@ -22,9 +22,8 @@ struct neighbor {
 	   indicates that no Hello Packet has been seen from
 	   this neighbor recently. The length of the timer is
 	   RouterDeadInterval seconds. */
-	int inactive_timer;
 	struct inactivity_timer_data *inactivity_timer_data;
-	struct ev_data *timer_priv_data;
+	struct ev_entry *inactive_timer_entry;
 
 	/* Master/Slave - When the two neighbors are exchanging
 	   databases, they form a master/slave relationship.

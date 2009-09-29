@@ -10,8 +10,6 @@
 #include "network.h"
 #include "shared.h"
 #include "buf.h"
-#include "event.h"
-#include "timer.h"
 #include "hello_tx.h"
 
 #define	DEFAULT_MTU_SIZE 1500
@@ -252,24 +250,22 @@ static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct interface_data 
 }
 
 /* this function is called in regular intervals by the event loop */
-void tx_ipv4_hello_packet(int fd, void *priv_data)
+void tx_ipv4_hello_packet(void *priv_data)
 {
 	int ret, hello_interval;
 	struct tx_hello_arg *txha = priv_data;
 	struct ospfd *ospfd = txha->ospfd;
 	struct interface_data *interface_data = txha->interface_data;
+	struct ev_entry *ee;
+	struct timespec timespec;
 
 	msg(ospfd, VERBOSE, "generate new hello packet");
 
 	hello_interval = interface_data->hello_interval ?
 		interface_data->hello_interval : OSPF_DEFAULT_HELLO_INTERVAL;
 
-	/* first of all - disarm the timer_fd and do some
-	 * sanity checks */
-	ret = timer_del(ospfd, fd);
-	if (ret != SUCCESS) {
-		err_msg("failure in disarming the timer");
-	}
+	timespec.tv_sec  = hello_interval;
+	timespec.tv_nsec = 0;
 
 	ret = tx_prepare_ipv4_hello_msg(ospfd, interface_data);
 	if (ret != SUCCESS) {
@@ -278,11 +274,19 @@ void tx_ipv4_hello_packet(int fd, void *priv_data)
 	}
 
 	/* and rearm the timer */
-	ret = timer_add_s_rel(ospfd, hello_interval, tx_ipv4_hello_packet, priv_data);
-	if (ret != SUCCESS) {
-		err_msg("Can't add timer for HELLO packet generation");
+	ee = ev_timer_new(&timespec, tx_ipv4_hello_packet, priv_data);
+	if (!ee) {
+		err_msg("failed to create timer\n");
 		return;
 	}
+
+	ret = ev_add(ospfd->ev, ee);
+	if (ret != EV_SUCCESS) {
+		err_msg("failed to add timer to event handler\n");
+		return;
+	}
+
+	msg(ospfd, VERBOSE, "register HELLO generation in %d seconds", hello_interval);
 }
 
 
