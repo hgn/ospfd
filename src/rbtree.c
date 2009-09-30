@@ -56,7 +56,8 @@ static struct rbtree_node* grandparent(struct rbtree_node* n) {
     return n->parent->parent;
 }
 
-struct rbtree_node* sibling(struct rbtree_node* n) {
+struct rbtree_node* sibling(struct rbtree_node* n)
+{
     assert (n != NULL);
     assert (n->parent != NULL); /* Root struct rbtree_node* has no sibling */
     if (n == n->parent->left)
@@ -65,7 +66,8 @@ struct rbtree_node* sibling(struct rbtree_node* n) {
         return n->parent->left;
 }
 
-struct rbtree_node* uncle(struct rbtree_node* n) {
+struct rbtree_node* uncle(struct rbtree_node* n)
+{
     assert (n != NULL);
     assert (n->parent != NULL); /* Root struct rbtree_node* has no uncle */
     assert (n->parent->parent != NULL); /* Children of root have no uncle */
@@ -74,18 +76,21 @@ struct rbtree_node* uncle(struct rbtree_node* n) {
 
 
 
-enum rbtree_color node_color(struct rbtree_node* n) {
+enum rbtree_color node_color(struct rbtree_node* n)
+{
     return n == NULL ? BLACK : n->color;
 }
 
 
-void rbtree_init(struct rbtree* tree, rbtree_compare_func compare) {
+void rbtree_init(struct rbtree* tree, rbtree_compare_func compare)
+{
     tree->root    = NULL;
     tree->compare = compare;
 	tree->size    = 0;
 }
 
-static int compare_int(void *l, void *r) {
+static int compare_int(void *l, void *r)
+{
      uintptr_t left  = (uintptr_t) l;
      uintptr_t right = (uintptr_t) r;
      if (left < right)
@@ -170,7 +175,9 @@ void rotate_right(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void replace_node(struct rbtree* t, struct rbtree_node* oldn, struct rbtree_node* newn) {
+void replace_node(struct rbtree* t, struct rbtree_node* oldn,
+		struct rbtree_node* newn)
+{
     if (oldn->parent == NULL) {
         t->root = newn;
     } else {
@@ -185,7 +192,8 @@ void replace_node(struct rbtree* t, struct rbtree_node* oldn, struct rbtree_node
 }
 
 
-void rbtree_insert(struct rbtree* t, struct rbtree_node *inserted_node) {
+void rbtree_insert(struct rbtree* t, struct rbtree_node *inserted_node)
+{
 
     inserted_node->color  = RED;
     inserted_node->left   = NULL;
@@ -226,7 +234,8 @@ void rbtree_insert(struct rbtree* t, struct rbtree_node *inserted_node) {
 }
 
 
-void insert_case1(struct rbtree* t, struct rbtree_node* n) {
+void insert_case1(struct rbtree* t, struct rbtree_node* n)
+{
     if (n->parent == NULL)
         n->color = BLACK;
     else
@@ -234,7 +243,8 @@ void insert_case1(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void insert_case2(struct rbtree* t, struct rbtree_node* n) {
+void insert_case2(struct rbtree* t, struct rbtree_node* n)
+{
     if (node_color(n->parent) == BLACK)
         return;
     else
@@ -242,19 +252,21 @@ void insert_case2(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void insert_case3(struct rbtree* t, struct rbtree_node* n) {
-    if (node_color(uncle(n)) == RED) {
-        n->parent->color = BLACK;
-        uncle(n)->color = BLACK;
-        grandparent(n)->color = RED;
-        insert_case1(t, grandparent(n));
-    } else {
-        insert_case4(t, n);
-    }
+void insert_case3(struct rbtree* t, struct rbtree_node* n)
+{
+	if (node_color(uncle(n)) == RED) {
+		n->parent->color = BLACK;
+		uncle(n)->color = BLACK;
+		grandparent(n)->color = RED;
+		insert_case1(t, grandparent(n));
+	} else {
+		insert_case4(t, n);
+	}
 }
 
 
-void insert_case4(struct rbtree* t, struct rbtree_node* n) {
+void insert_case4(struct rbtree* t, struct rbtree_node* n)
+{
     if (n == n->parent->right && n->parent == grandparent(n)->left) {
         rotate_left(t, n->parent);
         n = n->left;
@@ -266,7 +278,8 @@ void insert_case4(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void insert_case5(struct rbtree* t, struct rbtree_node* n) {
+void insert_case5(struct rbtree* t, struct rbtree_node* n)
+{
     n->parent->color = BLACK;
     grandparent(n)->color = RED;
     if (n == n->parent->left && n->parent == grandparent(n)->left) {
@@ -278,7 +291,8 @@ void insert_case5(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-struct rbtree_node *rbtree_delete(struct rbtree* t, void* key) {
+struct rbtree_node *rbtree_delete(struct rbtree* t, void* key)
+{
     struct rbtree_node* child;
     struct rbtree_node* n = lookup_node(t, key);
     if (n == NULL) return NULL; /* Key not found, do nothing */
@@ -302,7 +316,8 @@ struct rbtree_node *rbtree_delete(struct rbtree* t, void* key) {
 }
 
 
-static struct rbtree_node* maximum_node(struct rbtree_node* n) {
+static struct rbtree_node* maximum_node(struct rbtree_node* n)
+{
     assert (n != NULL);
     while (n->right != NULL) {
         n = n->right;
@@ -311,7 +326,8 @@ static struct rbtree_node* maximum_node(struct rbtree_node* n) {
 }
 
 
-void delete_case1(struct rbtree* t, struct rbtree_node* n) {
+void delete_case1(struct rbtree* t, struct rbtree_node* n)
+{
     if (n->parent == NULL)
         return;
     else
@@ -319,7 +335,8 @@ void delete_case1(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void delete_case2(struct rbtree* t, struct rbtree_node* n) {
+void delete_case2(struct rbtree* t, struct rbtree_node* n)
+{
     if (node_color(sibling(n)) == RED) {
         n->parent->color = RED;
         sibling(n)->color = BLACK;
@@ -332,7 +349,8 @@ void delete_case2(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void delete_case3(struct rbtree* t, struct rbtree_node* n) {
+void delete_case3(struct rbtree* t, struct rbtree_node* n)
+{
     if (node_color(n->parent) == BLACK &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == BLACK &&
@@ -346,7 +364,8 @@ void delete_case3(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void delete_case4(struct rbtree* t, struct rbtree_node* n) {
+void delete_case4(struct rbtree* t, struct rbtree_node* n)
+{
     if (node_color(n->parent) == RED &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == BLACK &&
@@ -360,7 +379,8 @@ void delete_case4(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void delete_case5(struct rbtree* t, struct rbtree_node* n) {
+void delete_case5(struct rbtree* t, struct rbtree_node* n)
+{
     if (n == n->parent->left &&
         node_color(sibling(n)) == BLACK &&
         node_color(sibling(n)->left) == RED &&
@@ -369,8 +389,7 @@ void delete_case5(struct rbtree* t, struct rbtree_node* n) {
         sibling(n)->color = RED;
         sibling(n)->left->color = BLACK;
         rotate_right(t, sibling(n));
-    }
-    else if (n == n->parent->right &&
+    } else if (n == n->parent->right &&
              node_color(sibling(n)) == BLACK &&
              node_color(sibling(n)->right) == RED &&
              node_color(sibling(n)->left) == BLACK)
@@ -383,16 +402,16 @@ void delete_case5(struct rbtree* t, struct rbtree_node* n) {
 }
 
 
-void delete_case6(struct rbtree* t, struct rbtree_node* n) {
+void delete_case6(struct rbtree* t, struct rbtree_node* n)
+{
     sibling(n)->color = node_color(n->parent);
     n->parent->color = BLACK;
+
     if (n == n->parent->left) {
         assert (node_color(sibling(n)->right) == RED);
         sibling(n)->right->color = BLACK;
         rotate_left(t, n->parent);
-    }
-    else
-    {
+    } else {
         assert (node_color(sibling(n)->left) == RED);
         sibling(n)->left->color = BLACK;
         rotate_right(t, n->parent);

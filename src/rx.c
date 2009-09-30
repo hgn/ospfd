@@ -181,6 +181,13 @@ void packet_input(int fd, int what, void *priv_data)
 	struct ospfd *ospfd;
 	struct o_buf o_buf;
 	char raw_packet_buf[MAX_PACKET_SIZE];
+	struct iovec iov;
+	struct msghdr msghdr;
+	char ancillary[64];
+	union {
+		struct sockaddr_in in4;
+		struct sockaddr_in6 in6;
+	} addr_src;
 
 	(void) what;
 
@@ -190,13 +197,6 @@ void packet_input(int fd, int what, void *priv_data)
 
 	o_buf.data = raw_packet_buf;
 
-	struct iovec iov;
-	struct msghdr msghdr;
-	char ancillary[64];
-	union {
-		struct sockaddr_in in4;
-		struct sockaddr_in6 in6;
-	} addr_src;
 
 	msghdr.msg_name = &addr_src;
 	msghdr.msg_namelen = sizeof(addr_src);

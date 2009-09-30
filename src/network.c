@@ -142,6 +142,8 @@ int list_cmp_struct_ip_addr(const void *a, const void *b)
 	}
 }
 
+#if 0
+
 static void print_all_addresses(const void *data)
 {
 	const struct ip_addr *ip_addr = (struct ip_addr *) data;
@@ -167,13 +169,15 @@ static void print_all_addresses(const void *data)
 	return;
 }
 
+#endif
+
 void print_all_interfaces(const void *data)
 {
 	const struct rd *rd = (struct rd *) data;
 
 	fprintf(stdout, "%-10s <%d>\n", rd->if_name, rd->if_flags);
 
-	//list_for_each(rd->ip_addr_list, print_all_addresses);
+	/* list_for_each(rd->ip_addr_list, print_all_addresses); */
 
 	return;
 }

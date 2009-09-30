@@ -19,7 +19,8 @@ struct neighbor *alloc_neighbor(void)
 	return neighbor;
 }
 
-void interface_add_neighbor(struct interface_data *interface_data, struct neighbor *neighbor)
+void interface_add_neighbor(struct interface_data *interface_data,
+		struct neighbor *neighbor)
 {
 	int ret;
 
@@ -39,10 +40,14 @@ void free_neighbor(void *a)
 	free(neighbor);
 }
 
-static void neighbor_set_state(struct ospfd *ospfd, struct interface_data *interface_data,
+static void neighbor_set_state(struct ospfd *ospfd,
+		struct interface_data *interface_data,
 		struct neighbor *neighbor, int new_state)
 {
 	neighbor->state = new_state;
+
+	(void) ospfd;
+	(void) interface_data;
 }
 
 void neighbor_inactive_timer_expired(void *data)
@@ -62,7 +67,8 @@ void neighbor_inactive_timer_expired(void *data)
 	free(neighbor);
 }
 
-int neighbor_start_inactive_timer(struct ospfd *ospfd, struct interface_data *i, struct neighbor *neighbor)
+int neighbor_start_inactive_timer(struct ospfd *ospfd,
+		struct interface_data *i, struct neighbor *neighbor)
 {
 	int ret;
 	struct inactivity_timer_data *inactivity_timer_data;
@@ -79,7 +85,8 @@ int neighbor_start_inactive_timer(struct ospfd *ospfd, struct interface_data *i,
 
 	neighbor->inactivity_timer_data = inactivity_timer_data;
 
-	ev_entry = ev_timer_new(&timespec, neighbor_inactive_timer_expired, inactivity_timer_data);
+	ev_entry = ev_timer_new(&timespec, neighbor_inactive_timer_expired,
+			inactivity_timer_data);
 	if (!ev_entry) {
 		err_msg_die(EXIT_FAILURE, "Cannot initialize a new timer");
 	}
@@ -109,7 +116,9 @@ int neighbor_cancel_inactive_timer(struct ospfd *ospfd, struct neighbor *neighbo
 	return SUCCESS;
 }
 
-int neighbor_restart_inactive_timer(struct ospfd *ospfd, struct interface_data *interface_data, struct neighbor *neighbor)
+int neighbor_restart_inactive_timer(struct ospfd *ospfd,
+		struct interface_data *interface_data,
+		struct neighbor *neighbor)
 {
 	int ret;
 
@@ -168,6 +177,8 @@ void remove_neighbor_from_interface_data_list(struct ospfd *ospfd,
 {
 	int ret;
 
+	(void) ospfd;
+
 	/* this impliciet calls the compare function of
 	 * interface_data->neighbor_list */
 	ret = list_remove(interface_data->neighbor_list, (void **)&neighbor);
@@ -196,6 +207,8 @@ int process_state_init_ev_hello_received(struct ospfd *o, struct interface_data 
 		struct neighbor *n, int new_state)
 {
 	int ret;
+
+	(void) new_state;
 
 	ret = neighbor_restart_inactive_timer(o, i, n);
 	if (ret != SUCCESS)

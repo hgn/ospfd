@@ -28,7 +28,8 @@ uint16_t calc_csum(unsigned char *buf, ssize_t len)
 	return ~sum;
 }
 
-static void ipv4_hdr_set_total_length(struct buf *packet_buffer, uint16_t length)
+static void ipv4_hdr_set_total_length(
+		struct buf *packet_buffer, uint16_t length)
 {
 	struct iphdr *ip; char *c = buf_addr(packet_buffer);
 
@@ -48,6 +49,7 @@ static void ipv4_recalc_hdr_csum(struct buf *packet_buffer)
 	return;
 }
 
+#if 0
 static void hex_dump_ipv4_packet(struct buf *packet_buffer)
 {
 	size_t i;
@@ -61,6 +63,7 @@ static void hex_dump_ipv4_packet(struct buf *packet_buffer)
 	}
 	fputs("\n", stderr);
 }
+#endif
 
 
 static size_t tx_prepare_ipv4_std_header(struct ospfd *ospfd,
@@ -122,7 +125,8 @@ static int tx_prepare_ospf_std_header(struct ospfd *ospfd,
 #define	OSPF_HELLO_OPTION_E  (1 << 1)
 
 
-static uint8_t get_hello_options(struct ospfd *ospfd, struct interface_data *interface_data)
+static uint8_t get_hello_options(struct ospfd *ospfd,
+		struct interface_data *interface_data)
 {
 	uint8_t options = 0;
 
@@ -135,6 +139,7 @@ static uint8_t get_hello_options(struct ospfd *ospfd, struct interface_data *int
 	return options;
 }
 
+#if 0
 static void recalc_ospf_hdr_csum(struct buf *packet_buffer)
 {
 	struct ipv4_ospf_header *h = buf_addr(packet_buffer) +
@@ -145,8 +150,10 @@ static void recalc_ospf_hdr_csum(struct buf *packet_buffer)
 
 	return;
 }
+#endif
 
-static void tx_set_ospf_standard_header_length(struct buf *packet_buffer, size_t ip_hdr_len)
+static void tx_set_ospf_standard_header_length(struct buf *packet_buffer,
+		size_t ip_hdr_len)
 {
 	struct ipv4_ospf_header *std_hdr = buf_addr(packet_buffer) + ip_hdr_len;
 
@@ -165,8 +172,8 @@ static int tx_prepare_ospf_hello_header(struct ospfd *ospfd,
 	hello_hdr.network_mask.s_addr = interface_data->ip_addr.ipv4.netmask.s_addr;
 
 	/* set HELLO interval */
-	hello_hdr.hello_interval      = interface_data->hello_interval ? htons(interface_data->hello_interval) :
-		htons(OSPF_DEFAULT_HELLO_INTERVAL);
+	hello_hdr.hello_interval = interface_data->hello_interval ?
+		htons(interface_data->hello_interval) : htons(OSPF_DEFAULT_HELLO_INTERVAL);
 
 	hello_hdr.options = get_hello_options(ospfd, interface_data);
 
@@ -204,7 +211,8 @@ static int tx_ipv4_buffer(const struct ospfd *ospfd, struct buf *packet_buffer)
 	return SUCCESS;
 }
 
-static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct interface_data *interface_data)
+static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd,
+		struct interface_data *interface_data)
 {
 	struct buf *packet_buffer;
 	size_t ip_hdr_len;
@@ -241,7 +249,7 @@ static int tx_prepare_ipv4_hello_msg(struct ospfd *ospfd, struct interface_data 
 
 	msg(ospfd, VERBOSE, "transmitted new HELLO packet (size: %d byte)",
 			buf_len(packet_buffer));
-	//hex_dump_ipv4_packet(packet_buffer);
+	/* hex_dump_ipv4_packet(packet_buffer); */
 
 
 	buf_free(packet_buffer);
